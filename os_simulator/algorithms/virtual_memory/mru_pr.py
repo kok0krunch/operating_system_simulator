@@ -1,1 +1,99 @@
 # Most Recently Used (MRU) Page Replacement Algorithm
+
+class MRUPageReplacement:
+    def __init__(self, capacity=3): # Default capacity of page frames is set to 3, can be changed by user input
+        self.capacity = capacity
+        self.frames = [None] * capacity  # This will hold the pages currently in memory
+        self.page_faults = 0
+
+    def user_input(self):
+        # Ask the user for the capacity of the page frames
+        print("The default capacity is set to 3. You can change it by entering a new value or type '3' to keep the default.")
+        
+        capacity_raw = input("Enter new capacity of the page frames: ").strip()
+        
+        if capacity_raw != '3' and capacity_raw != '':
+            try:
+                self.capacity = int(capacity_raw)
+                # Re-initialize the array size based on the user's custom capacity choice
+                self.frames = [None] * self.capacity
+            except ValueError:
+                print("❌ Invalid entry. Staying with default capacity: 3")
+                self.capacity = 3
+        
+        print(f"Page frame capacity set to: {self.capacity}\n")
+
+        # Ask the user for the entire list of page numbers to be accessed
+        while True:
+            page_raw = input("Enter a list of page numbers to access separated by comma (e.g., 1,2,3): ").strip()
+            try:
+                page_sequence = [int(page.strip()) for page in page_raw.split(',')]
+                if not page_sequence:
+                    print("Please enter at least one page number.")
+                    continue
+                break
+            except ValueError:
+                print("Invalid input format. Please enter a valid list of page numbers separated by commas.")
+         
+        self.run_simulation(page_sequence)
+        
+    def run_simulation(self, page_sequence):
+        print("\n" + "="*50)
+        print("SIMULATION TABLE OUTPUT (MRU)")
+        print("="*50)
+    
+        # Table Header
+        print(f"{'Page References':<15} | {'Page Frames':<18} | {'Status':<10}")
+        print("-" * 50)
+        
+        # Iterate through each page reference and access it
+        for i, page in enumerate(page_sequence):
+            status = ""
+            
+            # PAGE HIT: If the page is already in memory, it's a hit and we do nothing
+            if page in self.frames:
+                status = "⭐"
+                
+            # PAGE FAULT: If the page isn't in memory, we need to add it
+            else:
+                self.page_faults += 1
+                status = "FAULT"
+                
+                # Case 1: Fill empty slots first if they exist
+                if None in self.frames:
+                    empty_index = self.frames.index(None)
+                    self.frames[empty_index] = page
+                
+                # Case 2: Memory is full. Run the MRU backward-looking search.
+                else:
+                    replace_index = self.find_mru_index(page_sequence, i)
+                    self.frames[replace_index] = page
+            
+            # Print current row matching a structured vertical snapshot
+            readable_frames = [str(f) if f is not None else "-" for f in self.frames]
+            print(f"{page:<15} | {str(readable_frames):<18} | {status:<10}")
+
+        print("-" * 50)
+        print(f"Total Page Faults: {self.page_faults}")
+        print("="*50)
+        
+    def find_mru_index(self, page_sequence, current_index):
+        # Looks backward into the past of the page_sequence to find which currently loaded page frame was used most recently.
+        most_recent_index = -1  
+        index_to_replace = 0
+        
+        for frame_idx in range(self.capacity):
+            current_frame_page = self.frames[frame_idx]
+            
+            # Loop backwards from the current position down to 0
+            for past_index in range(current_index - 1, -1, -1):
+                if page_sequence[past_index] == current_frame_page:
+                    if past_index > most_recent_index: # # CONDITION CHANGE: We want the LARGEST index (closest to the current index)
+                        most_recent_index = past_index
+                        index_to_replace = frame_idx
+                    break
+                    
+        return index_to_replace
+    
+mru = MRUPageReplacement()
+mru.user_input()
