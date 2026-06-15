@@ -24,41 +24,52 @@ class FIFOPageReplacement:
         
         print(f"Page frame capacity set to: {self.capacity}\n")
 
-        # Ask the user for page numbers to be accessed
+        # Ask the user for the entire list of page numbers to be accessed
         while True:
-            page_input = input("Enter a page number (or 'exit' to stop): ").strip().lower()
-            
-            if page_input == 'exit':
-                print(f"\nFinal Total Page Faults: {self.page_faults}")
-                break
-            
+            page_raw = input("Enter a list of page numbers to access separated by comma (e.g., 1,2,3): ").strip()
             try:
-                self.access_page(int(page_input))
+                page_sequence = [int(page.strip()) for page in page_raw.split(',')]
+                if not page_sequence:
+                    print("Please enter at least one page number.")
+                    continue
+                break
             except ValueError:
-                print("Please enter a valid integer.")
-                
-    def access_page(self, page):
-        # PAGE HIT: If the page is already in memory, it's a hit and we do nothing
-        if page in self.frames:
-            print(f"✨ Page Hit! Page {page} is already in memory.")
+                print("Invalid input format. Please enter a valid list of page numbers separated by commas.")
+         
+        self.run_simulation(page_sequence)
+                    
+    def run_simulation(self, page_sequence):
+        print("\n" + "="*50)
+        print("SIMULATION TABLE OUTPUT (FIFO)")
+        print("="*50)
+    
+        # Table Header
+        print(f"{'Page References':<6} | {'Page Frames':<18} | {'Status':<10}")
+        print("-" * 50)
         
-        # PAGE FAULT: If the page isn't in memory, we need to add it
-        else:
-            self.page_faults += 1
-            old_page = self.frames[self.pointer] # Save old value for the print message before overriding it
-            self.frames[self.pointer] = page  # Replace the oldest page with the new page in its exact position
+        # Iterate through each page reference and access it
+        for page in page_sequence:
+            status = ""
             
-            if old_page is None:
-                print(f"🔄 Page Fault! Placed {page} into an empty slot.")
-            else:
-                print(f"🔄 Page Fault! Overwrote oldest page ({old_page}) with new page ({page}) at Slot {self.pointer}.")
-        
-            # Move the pointer to the next slot for the NEXT fault. 
-            # If it reaches the end of the capacity, it wraps back to 0.
-            self.pointer = (self.pointer + 1) % self.capacity
+            # PAGE HIT: If the page is already in memory, it's a hit and we do nothing
+            if page in self.frames:
+                status = "⭐"
                 
-        print(f"Current Pages in Memory: {self.frames}")
-        print(f"Total Page Faults: {self.page_faults}\n")
+            # PAGE FAULT: If the page isn't in memory, we need to add it
+            else:
+                self.page_faults += 1
+                self.frames[self.pointer] = page  # Replace inside the fixed slot position
+                self.pointer = (self.pointer + 1) % self.capacity  # Advance pointer
+                status = "FAULT"
+            
+            # Print current row matching a structured vertical snapshot
+            # Formats the array visually like [7, 0, 1] but replaces None with '-' for neatness
+            readable_frames = [str(f) if f is not None else "-" for f in self.frames]
+            print(f"{page:<15} | {str(readable_frames):<18} | {status:<10}")
+
+        print("-" * 45)
+        print(f"Total Page Faults: {self.page_faults}")
+        print("="*50)
 
 fifo = FIFOPageReplacement()  # Default capacity, can be changed by user input
 fifo.user_input()
