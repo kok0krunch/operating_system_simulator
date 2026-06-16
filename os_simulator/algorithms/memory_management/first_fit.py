@@ -7,29 +7,15 @@ class FirstFit:
         self.burst_time = burst_time
         self.memory_type = memory_type
 
-    def first_fit_logic(self, memory_type):
-        if memory_type == "MFT":
-            while True:
+    def mft_logic(self):
+        pass
+
+    def mvt_logic(self):
+         while True:
                 try:
                     memory_size_input = input("Enter memory block sizes separated by comma (e.g., 100,200,300): ").strip()
                     if int(memory_size_input)>0:
                       pass
-                    else:
-                        return ValueError
-                except:
-                    if memory_size_input<=0:
-                        print("Memory block size inserted is negative. Please input a positive number.")
-                        continue
-                    else:
-                        print("Memory block size inserted is not a number. Please type a number")
-                        continue
-
-        elif memory_type == "MVT":
-            while True:
-                try:
-                    memory_size_input = input("Enter memory block sizes separated by comma (e.g., 100,200,300): ").strip()
-                    if int(memory_size_input)>0:
-                        pass
                     else:
                         return ValueError
                 except:
@@ -46,9 +32,9 @@ def user_input():
         try:
             memory_type_input=input("Enter memory type (MFT/MVT):").strip()
             if memory_type_input.upper()=="MFT":
-                FirstFit.first_fit_logic("MFT")
+                FirstFit.mft_logic()
             elif memory_type_input.upper()=="MVT":
-                FirstFit.first_fit_logic("MVT")
+                FirstFit.mvt_logic()
             else:
                 return ValueError
 
