@@ -33,10 +33,8 @@ class FirstFit:
                         "size": int(process_size_input),
                         "burst_time": int(burst_time_input),
                         "allocated_partition": None,
-                        "fragmentation": 0             
-                    }
+                        "fragmentation": 0}
                     
-                    # Add it to your class tracking list immediately
                     self.jobs.append(process_data)
                     process_number += 1
                     
@@ -47,7 +45,34 @@ class FirstFit:
                 print("Process size and burst time should be positive integers. Please input valid numbers.")  
     
     def mft_logic(self):
-        pass
+        print("\nMFT Allocation Simulation\n")
+        
+        partition_occupied = [False] * len(self.memory_size)
+        
+
+        for job in self.jobs:
+            allocated = False
+            for index, part_size in enumerate(self.memory_size):
+                if part_size >= job["size"] and not partition_occupied[index]:
+                    internal_frag = part_size - job["size"]
+                    job["allocated_partition"] = f"Partition {index + 1} ({part_size})"
+                    job["fragmentation"] = internal_frag
+                    partition_occupied[index] = True
+                    allocated = True
+                    print(f"✅ {job['process_id']} (Size {job['size']}) allocated to Partition {index + 1} (Size {part_size}). Fragmentation: {internal_frag}")
+                    break  # Stop searching for this job; move to the next one
+        
+            if not allocated:
+                job["allocated_partition"] = "Wait / Unallocated"
+                job["fragmentation"] = "N/A"
+                print(f"❌ {job['process_id']} (Size {job['size']}) must WAIT. No matching free partition available.")
+
+        print("\n" + "="*60)
+        print(f"{'Job ID':<10}{'Size':<10}{'Burst':<10}{'Allocated To':<22}{'Frag':<10}")
+        print("="*60)
+        for job in self.jobs:
+            print(f"{job['process_id']:<10}{job['size']:<10}{job['burst_time']:<10}{str(job['allocated_partition']):<22}{str(job['fragmentation']):<10}")
+        print("="*60)
 
 
     def mvt_settings(self):
