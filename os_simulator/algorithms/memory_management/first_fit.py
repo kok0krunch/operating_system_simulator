@@ -14,25 +14,27 @@ class FirstFit:
                 for size in memory_size_list:
                     if int(size) <= 0:
                         raise ValueError
-                    else:
-                        self.memory_size=memory_size_list
-                        while True:
-                            try:
-                                process_size_input= input("enter process size: ").strip()
-                                burst_time_input= input("enter burst time: ").strip()
-                                if int(process_size_input) > 0 and int(burst_time_input) > 0:
-                                    self.process_size=int(process_size_input)
-                                    self.burst_time=int(burst_time_input)
-                                    print("Process size:", self.process_size)
-                                    print("Burst time:", self.burst_time)
-                                    break
-                                elif int(process_size_input) <= 0 or int(burst_time_input) <= 0:
-                                    print("Process size and burst time should be positive integers. Please input valid numbers.")
-                                    return False    
-                            except:
-                                print("Invalid input. Please enter valid integers for process size and burst time.")
+                    
+                self.memory_size=memory_size_list
+                break
             except:
                 print("Memory sizes should only be positive integers. Voiding initial inputs")
+
+        while True:
+            try:
+                process_size_input= input("enter process size: ").strip()
+                burst_time_input= input("enter burst time: ").strip()
+                if int(process_size_input) > 0 and int(burst_time_input) > 0:
+                    self.process_size=int(process_size_input)
+                    self.burst_time=int(burst_time_input)
+                    print("Process size:", self.process_size)
+                    print("Burst time:", self.burst_time)
+                    break
+                elif int(process_size_input) <= 0 or int(burst_time_input) <= 0:
+                    print("Process size and burst time should be positive integers. Please input valid numbers.")
+                    return False    
+            except:
+                print("Invalid input. Please enter valid integers for process size and burst time.")
 
     def mvt_logic(self):
          while True:
