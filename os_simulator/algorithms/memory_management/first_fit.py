@@ -1,7 +1,7 @@
 # First-Fit Memory Management Algorithm
 
 class FirstFit:
-    def __init__(self, memory_size, process_size, burst_time,):
+    def __init__(self):
         self.memory_size = None
         self.process_size = None
         self.burst_time = None
@@ -16,9 +16,23 @@ class FirstFit:
                         raise ValueError
                     else:
                         self.memory_size=memory_size_list
+                        while True:
+                            try:
+                                process_size_input= input("enter process size: ").strip()
+                                burst_time_input= input("enter burst time: ").strip()
+                                if int(process_size_input) > 0 and int(burst_time_input) > 0:
+                                    self.process_size=int(process_size_input)
+                                    self.burst_time=int(burst_time_input)
+                                    print("Process size:", self.process_size)
+                                    print("Burst time:", self.burst_time)
+                                    break
+                                elif int(process_size_input) <= 0 or int(burst_time_input) <= 0:
+                                    print("Process size and burst time should be positive integers. Please input valid numbers.")
+                                    return False    
+                            except:
+                                print("Invalid input. Please enter valid integers for process size and burst time.")
             except:
                 print("Memory sizes should only be positive integers. Voiding initial inputs")
-                memory_size_list.clear()
 
     def mvt_logic(self):
          while True:
@@ -55,4 +69,4 @@ def user_input(first_fit):
 if __name__ == "__main__":
     first_fit = FirstFit()
     print("Welcome to the First-Fit Memory Management Algorithm Simulator!")
-    user_input()
+    user_input(first_fit)
