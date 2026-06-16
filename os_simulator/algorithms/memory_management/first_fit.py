@@ -4,7 +4,10 @@ class FirstFit:
     def __init__(self):
         self.memory_size = None
         self.jobs=[]
-    def add_process(self, process_size_input, burst_time_input, process_number):
+
+
+    def add_process(self, process_size_input, burst_time_input):
+        process_number = len(self.jobs) + 1
         process_data = {
                         "process_id": f"P{process_number}",
                         "size": int(process_size_input),
@@ -13,10 +16,8 @@ class FirstFit:
                         "fragmentation": 0}
         
         self.jobs.append(process_data)
-        process_number += 1
 
     def mft_settings(self):
-        process_number = 1
         while True:
             try:
                 memory_size_input = input("Enter partitions separated with comma (ex. 1,2,3): ").strip()
@@ -38,7 +39,7 @@ class FirstFit:
                 burst_time_input= input("enter burst time: ").strip()
 
                 if int(process_size_input) > 0 and int(burst_time_input) > 0:
-                    self.add_process(process_size_input, burst_time_input, process_number)
+                    self.add_process(process_size_input, burst_time_input)
                     
                 elif int(process_size_input) <= 0 or int(burst_time_input) <= 0:
                     raise ValueError
@@ -46,12 +47,11 @@ class FirstFit:
             except:
                 print("Process size and burst time should be positive integers. Please input valid numbers.")  
     
+
     def mft_logic(self):
         print("\nMFT Allocation Simulation\n")
-        
         partition_occupied = [False] * len(self.memory_size)
         
-
         for job in self.jobs:
             allocated = False
             for index, part_size in enumerate(self.memory_size):
@@ -61,13 +61,13 @@ class FirstFit:
                     job["fragmentation"] = internal_frag
                     partition_occupied[index] = True
                     allocated = True
-                    print(f"✅ {job['process_id']} (Size {job['size']}) allocated to Partition {index + 1} (Size {part_size}). Fragmentation: {internal_frag}")
+                    print(f"{job['process_id']} (Size {job['size']}) allocated to Partition {index + 1} (Size {part_size}). Fragmentation: {internal_frag}")
                     break  # Stop searching for this job; move to the next one
         
             if not allocated:
                 job["allocated_partition"] = "Wait / Unallocated"
                 job["fragmentation"] = "N/A"
-                print(f"❌ {job['process_id']} (Size {job['size']}) must WAIT. No matching free partition available.")
+                print(f"{job['process_id']} (Size {job['size']}) must WAIT. No matching free partition available.")
 
         print("\n" + "="*60)
         print(f"{'Job ID':<10}{'Size':<10}{'Burst':<10}{'Allocated To':<22}{'Frag':<10}")
