@@ -17,6 +17,7 @@ class FirstFit:
         
         self.jobs.append(process_data)
 
+
     def mft_settings(self):
         while True:
             try:
@@ -106,7 +107,40 @@ class FirstFit:
 
 
     def mvt_logic(self):
-        pass
+        print("\nMVT Allocation Simulation\n")
+        total_memory_capacity = self.memory_size[0]
+        memory_map = [[0, total_memory_capacity, "FREE"]]
+        for job in self.jobs:
+            allocated = False
+            for index, block in enumerate(memory_map):
+                start_address, block_size, status = block
+                if status == "FREE" and block_size >= job["size"]:
+                    # Update job data
+                    job["allocated_partition"] = f"Address {start_address}"
+                    job["fragmentation"] = 0
+                    memory_map[index] = [start_address, job["size"], job["process_id"]]
+                    leftover_space = block_size - job["size"]
+
+                    if leftover_space > 0:
+                        new_free_start = start_address + job["size"]
+                        memory_map.insert(index + 1, [new_free_start, leftover_space, "FREE"])
+
+                    allocated = True
+                    print(f" {job['process_id']} allocated at Address {start_address} (Carved {job['size']} KB)")
+                    break  # Allocation complete for this job; move to the next one
+            
+            if not allocated:
+                job["allocated_partition"] = "Wait (External Frag)"
+                job["fragmentation"] = "N/A"
+                print(f" {job['process_id']} (Size {job['size']}) must WAIT. No single free block is big enough.")
+
+
+        print("\n" + "="*60)
+        print(f"{'Job ID':<10}{'Size':<10}{'Burst':<10}{'Allocated To':<22}{'Internal Frag':<10}")
+        print("="*60)
+        for job in self.jobs:
+            print(f"{job['process_id']:<10}{job['size']:<10}{job['burst_time']:<10}{str(job['allocated_partition']):<22}{str(job['fragmentation']):<10}")
+        print("="*60)
 
 # definitions
 def user_input(first_fit):
