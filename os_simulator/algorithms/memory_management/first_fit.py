@@ -4,6 +4,16 @@ class FirstFit:
     def __init__(self):
         self.memory_size = None
         self.jobs=[]
+    def add_process(self, process_size_input, burst_time_input, process_number):
+        process_data = {
+                        "process_id": f"P{process_number}",
+                        "size": int(process_size_input),
+                        "burst_time": int(burst_time_input),
+                        "allocated_partition": None,
+                        "fragmentation": 0}
+        
+        self.jobs.append(process_data)
+        process_number += 1
 
     def mft_settings(self):
         process_number = 1
@@ -28,15 +38,7 @@ class FirstFit:
                 burst_time_input= input("enter burst time: ").strip()
 
                 if int(process_size_input) > 0 and int(burst_time_input) > 0:
-                    process_data = {
-                        "process_id": f"P{process_number}",
-                        "size": int(process_size_input),
-                        "burst_time": int(burst_time_input),
-                        "allocated_partition": None,
-                        "fragmentation": 0}
-                    
-                    self.jobs.append(process_data)
-                    process_number += 1
+                    self.add_process(process_size_input, burst_time_input, process_number)
                     
                 elif int(process_size_input) <= 0 or int(burst_time_input) <= 0:
                     raise ValueError
