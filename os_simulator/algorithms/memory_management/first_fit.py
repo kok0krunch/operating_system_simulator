@@ -6,7 +6,7 @@ class FirstFit:
         self.process_size = None
         self.burst_time = None
 
-    def mft_logic(self):
+    def mft_settings(self):
         while True:
             try:
                 memory_size_input = input("Enter partitions separated with comma (ex. 1,2,3): ").strip()
@@ -17,26 +17,34 @@ class FirstFit:
                     
                 self.memory_size=memory_size_list
                 break
+
             except:
                 print("Memory sizes should only be positive integers. Voiding initial inputs")
+
 
         while True:
             try:
                 process_size_input= input("enter process size: ").strip()
                 burst_time_input= input("enter burst time: ").strip()
+
                 if int(process_size_input) > 0 and int(burst_time_input) > 0:
                     self.process_size=int(process_size_input)
                     self.burst_time=int(burst_time_input)
                     print("Process size:", self.process_size)
                     print("Burst time:", self.burst_time)
                     break
-                elif int(process_size_input) <= 0 or int(burst_time_input) <= 0:
-                    print("Process size and burst time should be positive integers. Please input valid numbers.")
-                    return False    
-            except:
-                print("Invalid input. Please enter valid integers for process size and burst time.")
 
-    def mvt_logic(self):
+                elif int(process_size_input) <= 0 or int(burst_time_input) <= 0:
+                    raise ValueError
+                
+            except:
+                print("Process size and burst time should be positive integers. Please input valid numbers.")  
+    
+    def mft_logic(self):
+        pass
+
+
+    def mvt_settings(self):
          while True:
             try:
                 memory_size_input = input("Enter total memory block size: ").strip()
@@ -51,15 +59,18 @@ class FirstFit:
                     print("Memory block size inserted is not a number. Please type a number")
 
 
+    def mvt_logic(self):
+        pass
+
 # definitions
 def user_input(first_fit):
     while True:
         try:
             memory_type_input=input("Enter memory type (MFT/MVT):").strip()
             if memory_type_input.upper()=="MFT":
-                first_fit.mft_logic()
+                first_fit.mft_settings()
             elif memory_type_input.upper()=="MVT":
-                first_fit.mvt_logic()
+                first_fit.mvt_settings()
             else:
                 raise ValueError
 
