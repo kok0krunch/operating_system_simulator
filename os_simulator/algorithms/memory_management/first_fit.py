@@ -108,7 +108,7 @@ class FirstFit:
 
     def mvt_logic(self):
         print("\nMVT Allocation Simulation\n")
-        total_memory_capacity = self.memory_size[0]
+        total_memory_capacity = self.memory_size
         memory_map = [[0, total_memory_capacity, "FREE"]]
         for job in self.jobs:
             allocated = False
