@@ -7,11 +7,20 @@ class FirstFit:
         self.burst_times = burst_times
         self.memory_type= memory_type
 
-    def user_input(self):
-       pass
-
-    def main_logic(self):
+    def first_fit_logic(self):
         pass
 
-    def working_algorithm (self):
-        pass
+# definitions
+def user_input():
+    while True:
+        try:
+            memory_type_input=input("Enter memory type (MFT/MVT):").strip()
+
+        except:
+            print("Invalid input. Please enter 'MFT' or MVT'")
+
+# main program
+if __name__ == "__main__":
+    first_fit=FirstFit()
+    print("Binary Search Tree\nTo start type:")
+    user_input()
