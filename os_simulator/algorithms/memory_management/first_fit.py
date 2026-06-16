@@ -3,10 +3,10 @@
 class FirstFit:
     def __init__(self):
         self.memory_size = None
-        self.process_size = None
-        self.burst_time = None
+        self.jobs=[]
 
     def mft_settings(self):
+        process_number = 1
         while True:
             try:
                 memory_size_input = input("Enter partitions separated with comma (ex. 1,2,3): ").strip()
@@ -28,12 +28,18 @@ class FirstFit:
                 burst_time_input= input("enter burst time: ").strip()
 
                 if int(process_size_input) > 0 and int(burst_time_input) > 0:
-                    self.process_size=int(process_size_input)
-                    self.burst_time=int(burst_time_input)
-                    print("Process size:", self.process_size)
-                    print("Burst time:", self.burst_time)
-                    break
-
+                    process_data = {
+                        "process_id": f"P{process_number}",
+                        "size": int(process_size_input),
+                        "burst_time": int(burst_time_input),
+                        "allocated_partition": None,
+                        "fragmentation": 0             
+                    }
+                    
+                    # Add it to your class tracking list immediately
+                    self.jobs.append(process_data)
+                    process_number += 1
+                    
                 elif int(process_size_input) <= 0 or int(burst_time_input) <= 0:
                     raise ValueError
                 
