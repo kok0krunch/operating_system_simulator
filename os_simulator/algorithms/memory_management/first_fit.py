@@ -1,14 +1,44 @@
 # First-Fit Memory Management Algorithm
 
 class FirstFit:
-    def __init__(self, memory_sizes, process_sizes, burst_times, memory_type):
-        self.memory_sizes = memory_sizes
-        self.process_sizes = process_sizes
-        self.burst_times = burst_times
+    def __init__(self, memory_size, process_size, burst_time, memory_type):
+        self.memory_size = memory_size
+        self.process_size = process_size
+        self.burst_time = burst_time
         self.memory_type = memory_type
 
     def first_fit_logic(self, memory_type):
-        pass
+        if memory_type == "MFT":
+            while True:
+                try:
+                    memory_size_input = input("Enter memory block sizes separated by comma (e.g., 100,200,300): ").strip()
+                    if int(memory_size_input)>0:
+                      pass
+                    else:
+                        return ValueError
+                except:
+                    if memory_size_input<=0:
+                        print("Memory block size inserted is negative. Please input a positive number.")
+                        continue
+                    else:
+                        print("Memory block size inserted is not a number. Please type a number")
+                        continue
+
+        elif memory_type == "MVT":
+            while True:
+                try:
+                    memory_size_input = input("Enter memory block sizes separated by comma (e.g., 100,200,300): ").strip()
+                    if int(memory_size_input)>0:
+                        pass
+                    else:
+                        return ValueError
+                except:
+                    if memory_size_input<=0:
+                        print("Memory block size inserted is negative. Please input a positive number.")
+                        continue
+                    else:
+                        print("Memory block size inserted is not a number. Please type a number")
+                        continue
 
 # definitions
 def user_input():
