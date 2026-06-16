@@ -89,6 +89,20 @@ class FirstFit:
                     break
             except:
                 print("Memory size should only be positive integers. Please input a valid number.")
+        
+         while True:
+            try:
+                process_size_input= input("enter process size: ").strip()
+                burst_time_input= input("enter burst time: ").strip()
+
+                if int(process_size_input) > 0 and int(burst_time_input) > 0:
+                    self.add_process(process_size_input, burst_time_input)
+                    
+                elif int(process_size_input) <= 0 or int(burst_time_input) <= 0:
+                    raise ValueError
+                
+            except:
+                print("Process size and burst time should be positive integers. Please input valid numbers.")  
 
 
     def mvt_logic(self):
