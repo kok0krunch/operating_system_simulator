@@ -81,15 +81,14 @@ class FirstFit:
          while True:
             try:
                 memory_size_input = input("Enter total memory block size: ").strip()
-                if int(memory_size_input)>0:
-                    pass
-                else:
+                if int(memory_size_input) <= 0:
                     raise ValueError
-            except:
-                if int(memory_size_input)<=0:
-                    print("Memory block size inserted is negative. Please input a positive number.")
+                
                 else:
-                    print("Memory block size inserted is not a number. Please type a number")
+                    self.memory_size=int(memory_size_input)
+                    break
+            except:
+                print("Memory size should only be positive integers. Please input a valid number.")
 
 
     def mvt_logic(self):
