@@ -17,7 +17,7 @@ class WorstFit:
         
         self.jobs.append(process_data)
 
-    def mvt_settings(self):
+    def first_fit_settings(self):
          while True:
             try:
                 memory_size_input = input("Enter total memory block size: ").strip()
@@ -45,7 +45,7 @@ class WorstFit:
                 print("Process size and burst time should be positive integers. Please input valid numbers.")  
 
 
-    def mvt_logic(self, compaction_enabled=False):
+    def first_fit_logic(self, compaction_enabled=False):
         pass
 
 # main program
