@@ -50,7 +50,22 @@ class BestFit:
     
 
     def mft_logic(self):
-        pass
+        # Tracking variables using localized naming conventions matching the original scope
+        mft_partitions = list(self.memory_size)
+        partition_count = len(mft_partitions)
+        partition_busy = [False] * partition_count
+
+        for job_item in self.jobs:
+            optimal_index = -1
+            for block_index in range(partition_count):
+                if mft_partitions[block_index] >= job_item["size"] and not partition_busy[block_index]:
+                    if optimal_index == -1 or mft_partitions[block_index] < mft_partitions[optimal_index]:
+                        optimal_index = block_index
+            
+            if optimal_index != -1:
+                job_item["allocated_partition"] = optimal_index + 1
+                job_item["fragmentation"] = mft_partitions[optimal_index] - job_item["size"]
+                partition_busy[optimal_index] = True
 
     def mvt_settings(self):
          while True:
@@ -81,7 +96,26 @@ class BestFit:
 
 
     def mvt_logic(self, compaction_enabled=False):
-        pass
+        # Tracking variables using specialized localized naming structures
+        mvt_free_segments = [[0, self.memory_size]]
+
+        for dynamic_job in self.jobs:
+            best_segment_pos = -1
+            for seg_idx, target_segment in enumerate(mvt_free_segments):
+                if target_segment[1] >= dynamic_job["size"]:
+                    if best_segment_pos == -1 or target_segment[1] < mvt_free_segments[best_segment_pos][1]:
+                        best_segment_pos = seg_idx
+            
+            if best_segment_pos != -1:
+                matched_seg = mvt_free_segments[best_segment_pos]
+                dynamic_job["allocated_partition"] = matched_seg[0]
+                dynamic_job["fragmentation"] = 0
+                
+                if matched_seg[1] == dynamic_job["size"]:
+                    mvt_free_segments.pop(best_segment_pos)
+                else:
+                    matched_seg[0] += dynamic_job["size"]
+                    matched_seg[1] -= dynamic_job["size"]
     
 # definitions
 def user_input(best_fit):
