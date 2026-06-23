@@ -36,8 +36,8 @@ class BestFit:
 
         while True:
             try:
-                process_size_input= input("enter process size: ").strip()
-                burst_time_input= input("enter burst time: ").strip()
+                process_size_input = input("enter process size: ").strip()
+                burst_time_input = input("enter burst time: ").strip()
 
                 if int(process_size_input) > 0 and int(burst_time_input) > 0:
                     self.add_process(process_size_input, burst_time_input)
@@ -66,6 +66,8 @@ class BestFit:
                 job_item["allocated_partition"] = optimal_index + 1
                 job_item["fragmentation"] = mft_partitions[optimal_index] - job_item["size"]
                 partition_busy[optimal_index] = True
+            else:
+                job_item["allocated_partition"] = "Not Allocated"
 
     def mvt_settings(self):
          while True:
@@ -82,8 +84,8 @@ class BestFit:
         
          while True:
             try:
-                process_size_input= input("enter process size: ").strip()
-                burst_time_input= input("enter burst time: ").strip()
+                process_size_input = input("enter process size: ").strip()
+                burst_time_input = input("enter burst time: ").strip()
 
                 if int(process_size_input) > 0 and int(burst_time_input) > 0:
                     self.add_process(process_size_input, burst_time_input)
@@ -138,8 +140,12 @@ def user_input(best_fit):
             memory_type_input=input("Enter memory type (MFT/MVT):").strip()
             if memory_type_input.upper()=="MFT":
                 best_fit.mft_settings()
+                best_fit.mft_logic()
             elif memory_type_input.upper()=="MVT":
                 best_fit.mvt_settings()
+                compact_choice = input("Enable compaction? (y/n): ").strip().lower()
+                is_compact = True if compact_choice in ['y', 'yes'] else False
+                best_fit.mvt_logic(compaction_enabled=is_compact) 
             else:
                 raise ValueError
 
