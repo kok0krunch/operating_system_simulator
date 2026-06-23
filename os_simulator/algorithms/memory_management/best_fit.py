@@ -96,7 +96,7 @@ class BestFit:
 
 
     def mvt_logic(self, compaction_enabled=False):
-        # Tracking variables using specialized localized naming structures
+        # Free segments mapped tracking pairs: [start_address, remaining_capacity]
         mvt_free_segments = [[0, self.memory_size]]
 
         for dynamic_job in self.jobs:
@@ -106,17 +106,31 @@ class BestFit:
                     if best_segment_pos == -1 or target_segment[1] < mvt_free_segments[best_segment_pos][1]:
                         best_segment_pos = seg_idx
             
+            # Compaction Implementation: If no single block fits, check if total space allows it
+            if best_segment_pos == -1 and compaction_enabled:
+                total_free_space = sum(segment[1] for segment in mvt_free_segments)
+                if total_free_space >= dynamic_job["size"]:
+                    print(f"\n[Compaction Triggered for {dynamic_job['process_id']}]")
+                    
+                    # Compute where the new unified block starts
+                    used_space_boundary = self.memory_size - total_free_space
+                    mvt_free_segments = [[used_space_boundary, total_free_space]]
+                    
+                    # The first index is now guaranteed to be the best-fitting unified partition
+                    best_segment_pos = 0
+
             if best_segment_pos != -1:
                 matched_seg = mvt_free_segments[best_segment_pos]
-                dynamic_job["allocated_partition"] = matched_seg[0]
+                dynamic_job["allocated_partition"] = f"Address Range {matched_seg[0]} to {matched_seg[0] + dynamic_job['size']}"
                 dynamic_job["fragmentation"] = 0
                 
                 if matched_seg[1] == dynamic_job["size"]:
                     mvt_free_segments.pop(best_segment_pos)
                 else:
-                    matched_seg[0] += dynamic_job["size"]
-                    matched_seg[1] -= dynamic_job["size"]
-    
+                    matched_seg[0] += dynamic_job["size"] # Increment starting address
+                    matched_seg[1] -= dynamic_job["size"] # Reduce chunk capacity 
+            else:
+                dynamic_job["allocated_partition"] = "Not Allocated"
 # definitions
 def user_input(best_fit):
     while True:
