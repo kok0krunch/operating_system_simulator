@@ -48,7 +48,45 @@ class BestAvailableFit:
     
 
     def mft_logic(self):
-        pass
+        mft_partitions = list(self.memory_size)
+        partition_count = len(mft_partitions)
+        if self.partition_busy is None:
+            self.partition_busy = [False] * partition_count
+
+        for job_item in self.jobs:
+            if job_item["allocated_partition"] is not None:
+                continue
+
+            optimal_index = -1
+            for block_index in range(partition_count):
+                if mft_partitions[block_index] >= job_item["size"] and not self.partition_busy[block_index]:
+                    if optimal_index == -1 or mft_partitions[block_index] < mft_partitions[optimal_index]:
+                        optimal_index = block_index
+            
+            if optimal_index != -1:
+                job_item["allocated_partition"] = optimal_index + 1
+                job_item["fragmentation"] = mft_partitions[optimal_index] - job_item["size"]
+                self.partition_busy[optimal_index] = True
+            
+            else:
+                available_swap_index = -1
+                for block_index in range(partition_count):
+                    if mft_partitions[block_index] >= job_item["size"]:
+                        if available_swap_index == -1 or mft_partitions[block_index] < mft_partitions[available_swap_index]:
+                            available_swap_index = block_index
+                
+                if available_swap_index != -1:
+                    for old_job in self.jobs:
+                        if old_job["allocated_partition"] == available_swap_index + 1:
+                            old_job["allocated_partition"] = "Swapped Out / Suspended"
+                            old_job["fragmentation"] = 0
+                    
+                    print(f"\n[!] Partition {available_swap_index + 1} is busy. Swapping out old process to make it AVAILABLE for {job_item['process_id']}.")
+                    job_item["allocated_partition"] = available_swap_index + 1
+                    job_item["fragmentation"] = mft_partitions[available_swap_index] - job_item["size"]
+                    self.partition_busy[available_swap_index] = True
+                else:
+                    job_item["allocated_partition"] = "Not Allocated (Too Large)"
 
     def mvt_settings(self):
          while True:
