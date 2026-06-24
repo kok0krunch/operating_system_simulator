@@ -1,100 +1,271 @@
 # Most Frequently Used (MFU) Page Replacement Algorithm
 
-class MFUPageReplacement:
-    def __init__(self, capacity=3): # Default capacity of page frames is set to 3, can be changed by user input
-        self.capacity = capacity
-        self.frames = [None] * capacity  # This will hold the pages currently in memory
-        self.page_faults = 0
-        self.frequency = {}  # Keeps track of the access count for every page number
+import pygame
+import sys
+import os
 
-    def user_input(self):
-        # Ask the user for the capacity of the page frames
-        print("The default capacity is set to 3. You can change it by entering a new value or type '3' to keep the default.")
-        
-        capacity_raw = input("Enter new capacity of the page frames: ").strip()
-        
-        if capacity_raw != '3' and capacity_raw != '':
-            try:
-                self.capacity = int(capacity_raw)
-                # Re-initialize the array size based on the user's custom capacity choice
-                self.frames = [None] * self.capacity
-            except ValueError:
-                print("❌ Invalid entry. Staying with default capacity: 3")
-                self.capacity = 3
-        
-        print(f"Page frame capacity set to: {self.capacity}\n")
+# Constants & Configurations
+NEON_GREEN = (57, 255, 20)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
 
-        # Ask the user for the entire list of page numbers to be accessed
-        while True:
-            page_raw = input("Enter a list of page numbers to access separated by comma (e.g., 1,2,3): ").strip()
-            try:
-                page_sequence = [int(page.strip()) for page in page_raw.split(',')]
-                if not page_sequence:
-                    print("Please enter at least one page number.")
-                    continue
-                break
-            except ValueError:
-                print("Invalid input format. Please enter a valid list of page numbers separated by commas.")
-         
-        self.run_simulation(page_sequence)
-        
-    def run_simulation(self, page_sequence):
-        print("\n" + "="*50)
-        print("SIMULATION TABLE OUTPUT (MFU)")
-        print("="*50)
-    
-        # Table Header
-        print(f"{'Page References':<15} | {'Page Frames':<18} | {'Status':<10}")
-        print("-" * 50)
-        
-        # Iterate through each page reference and access it
-        for i, page in enumerate(page_sequence):
-            status = ""
-            
-            # Update frequency counter whenever a page is referenced (Hit or Fault)
-            self.frequency[page] = self.frequency.get(page, 0) + 1
-            
-            # PAGE HIT: If the page is already in memory, it's a hit and we do nothing
-            if page in self.frames:
-                status = "⭐"
-                
-            # PAGE FAULT: If the page isn't in memory, we need to add it
-            else:
-                self.page_faults += 1
-                status = "FAULT"
-                
-                # Case 1: Fill empty slots first if they exist
-                if None in self.frames:
-                    empty_index = self.frames.index(None)
-                    self.frames[empty_index] = page
-                
-                # Case 2: Memory is full. Run the MFU frequency inspection.
-                else:
-                    replace_index = self.find_mfu_index()
-                    self.frames[replace_index] = page
-            
-            # Print current row matching a structured vertical snapshot
-            readable_frames = [str(f) if f is not None else "-" for f in self.frames]
-            print(f"{page:<15} | {str(readable_frames):<18} | {status:<10}")
+# Screen Size
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
 
-        print("-" * 50)
-        print(f"Total Page Faults: {self.page_faults}")
-        print("="*50)
-        
-    def find_mfu_index(self):
-        # Looks at the accumulated frequencies of the pages inside the memory frames to choose the one with the highest access count.
-        highest_frequency = -1 # Initialized to -1 to easily catch the maximum value
+def mfu_menu(screen):
+    """
+    Main GUI function for MFU Page Replacement.
+    Can be imported and called from another script.
+    """
+    pygame.init()
+    clock = pygame.time.Clock()
+
+    # Load resources with fallbacks
+    try:
+        background = pygame.image.load("os_simulator\\components\\background.png").convert()
+        background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    except Exception:
+        background = None
+
+    # STRICT REQUIREMENT: Load the uploaded VT323-Regular.ttf font file explicitly
+    font_path = "os_simulator\\components\\VT323-Regular.ttf"
+    if not os.path.exists(font_path):
+        print(f"CRITICAL ERROR: The font file '{font_path}' was not found in the directory.")
+        print("Please place the 'VT323-Regular.ttf' file in the same folder as this script.")
+        pygame.quit()
+        sys.exit()
+
+    # Define font instances strictly using the uploaded TTF file
+    font_title = pygame.font.Font(font_path, 36) 
+    font_setup = pygame.font.Font(font_path, 46) 
+    font_input = pygame.font.Font(font_path, 48)
+    font_table = pygame.font.Font(font_path, 32) 
+
+    # State machine variables
+    # States: 0 = Input Capacity, 1 = Input Pages, 2 = Display Simulation Table
+    state = 0
+    capacity_input = ""
+    pages_input = ""
+    error_message = ""
+
+    # Simulation data variables
+    capacity = 3
+    page_sequence = []
+    simulation_steps = []
+    total_page_faults = 0
+
+    def find_mfu_index(frames, frequency, cap):
+        # MFU Strategy: Scan active frames and find the page with the highest/maximum frequency count
+        highest_frequency = -1
         index_to_replace = 0
         
-        for frame_idx in range(self.capacity):
-            current_frame_page = self.frames[frame_idx]
-            page_freq = self.frequency[current_frame_page]
+        for frame_idx in range(cap):
+            current_frame_page = frames[frame_idx]
+            page_freq = frequency.get(current_frame_page, 0)
             
-            if page_freq > highest_frequency: # Find the page with the HIGHEST overall frequency count
+            if page_freq > highest_frequency:
                 highest_frequency = page_freq
                 index_to_replace = frame_idx
                 
         return index_to_replace
-    
-mfu = MFUPageReplacement()
-mfu.user_input()
+
+    def run_mfu_simulation(seq, cap):
+        nonlocal total_page_faults, simulation_steps
+        frames = [None] * cap
+        frequency = {}  # Clear/track access count dynamically per sequence invocation
+        faults = 0
+        steps = []
+
+        for page in seq:
+            status = ""
+            replaced_index = -1
+            
+            # Increment tracking frequency counter on every unique page encounter reference
+            frequency[page] = frequency.get(page, 0) + 1
+            
+            if page in frames:
+                status = "HIT"
+            else:
+                faults += 1
+                status = "FAULT"
+                
+                # Case 1: Fill empty slots first if they exist
+                if None in frames:
+                    replaced_index = frames.index(None)
+                    frames[replaced_index] = page
+                # Case 2: Memory is full. Run the MFU internal highest-frequency inspection.
+                else:
+                    replaced_index = find_mfu_index(frames, frequency, cap)
+                    frames[replaced_index] = page
+            
+            readable_frames = [str(f) if f is not None else "" for f in frames]
+            steps.append({
+                "page": page,
+                "frames": list(readable_frames),
+                "status": status,
+                "new_index": replaced_index
+            })
+        
+        total_page_faults = faults
+        simulation_steps = steps
+
+    # Main UI loop
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+                
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                    return
+
+                if state == 0:  # Capacity Input Mode
+                    if event.key == pygame.K_RETURN:
+                        raw = capacity_input.strip()
+                        if raw == "" or raw == "3":
+                            capacity = 3
+                            state = 1
+                            error_message = ""
+                        else:
+                            try:
+                                capacity = int(raw)
+                                if capacity <= 0 or capacity > 7:
+                                    raise ValueError
+                                state = 1
+                                error_message = ""
+                            except ValueError:
+                                error_message = "Invalid Capacity (Max 7)! Defaulting to 3"
+                                capacity = 3
+                                state = 1
+                    elif event.key == pygame.K_BACKSPACE:
+                        capacity_input = capacity_input[:-1]
+                    else:
+                        if event.unicode.isdigit():
+                            capacity_input += event.unicode
+
+                elif state == 1:  # Sequence Input Mode
+                    if event.key == pygame.K_RETURN:
+                        raw = pages_input.strip()
+                        try:
+                            page_sequence = [int(p.strip()) for p in raw.split(',') if p.strip() != ""]
+                            if not page_sequence:
+                                error_message = "Please enter at least one page number."
+                            elif len(page_sequence) > 20:
+                                error_message = "Sequence is too long! Keep it under 20 pages."
+                            else:
+                                error_message = ""
+                                run_mfu_simulation(page_sequence, capacity)
+                                state = 2
+                        except ValueError:
+                            error_message = "Invalid format! Use commas (e.g., 7,0,1,2)."
+                    elif event.key == pygame.K_BACKSPACE:
+                        pages_input = pages_input[:-1]
+                    else:
+                        if event.unicode.isdigit() or event.unicode == ',':
+                            pages_input += event.unicode
+                            
+                elif state == 2:  # Table Output View Mode
+                    if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                        state = 0
+                        capacity_input = ""
+                        pages_input = ""
+                        simulation_steps = []
+                        total_page_faults = 0
+
+        # Rendering Background Graphics
+        if background:
+            screen.blit(background, (0, 0))
+        else:
+            screen.fill(BLACK)
+
+        # 1. Top Left Header Panel Title
+        title_surface = font_title.render("VIRTUAL MEMORY: Most Frequently Used (MFU) Page Replacement", True, BLACK)
+        screen.blit(title_surface, (20, 10))
+
+        # 2. Setup Screen Interactions (Perfect spacing constraints using size 48 text)
+        if state == 0:
+            txt1 = "The default capacity is set to 3. You can change it by"
+            txt2 = "entering a new value or type '3' to keep the default."
+            txt3 = f"Enter new capacity of the page frames: {capacity_input}"
+
+            surf1 = font_input.render(txt1, True, NEON_GREEN)
+            surf2 = font_input.render(txt2, True, NEON_GREEN)
+            surf3 = font_input.render(txt3, True, NEON_GREEN) 
+
+            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 140)))
+            screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 80)))
+            screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 95)))
+
+        elif state == 1:
+            txt1 = "Enter a list of page numbers to access"
+            txt2 = "separated by comma (e.g., 7,0,1,2):"
+            txt3 = f"[{pages_input}]"
+
+            surf1 = font_input.render(txt1, True, NEON_GREEN)
+            surf2 = font_input.render(txt2, True, NEON_GREEN)
+            surf3 = font_input.render(txt3, True, NEON_GREEN) 
+
+            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 140)))
+            screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 80)))
+            screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 95)))
+
+            if error_message:
+                err_surf = font_title.render(error_message, True, NEON_GREEN)
+                screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 180)))
+
+        elif state == 2:
+            # 3. Diagram Simulation Grid Map Layout
+            num_pages = len(simulation_steps)
+            box_width = 55   
+            box_height = 50  
+            
+            total_grid_width = num_pages * box_width
+            start_x = (SCREEN_WIDTH - total_grid_width) // 2
+            start_y = 180
+
+            for idx, step in enumerate(simulation_steps):
+                col_x = start_x + (idx * box_width)
+                
+                # Render Sequence References
+                pygame.draw.rect(screen, NEON_GREEN, (col_x, start_y, box_width, box_height), 2) 
+                p_surf = font_table.render(str(step.get("page", "")), True, NEON_GREEN)
+                screen.blit(p_surf, p_surf.get_rect(center=(col_x + box_width // 2, start_y + box_height // 2)))
+
+                # Frames Block Rendering (Skips drawing frame blocks on Hits)
+                if step.get("status") == "FAULT":
+                    step_frames = step.get("frames", [""] * capacity)
+                    new_idx = step.get("new_index", -1)
+                    
+                    for f_idx in range(capacity):
+                        cell_y = start_y + (box_height + 30) + (f_idx * box_height)
+                        pygame.draw.rect(screen, NEON_GREEN, (col_x, cell_y, box_width, box_height), 2)
+                        
+                        if f_idx < len(step_frames):
+                            val = step_frames[f_idx]
+                            if val != "":
+                                color = RED if f_idx == new_idx else NEON_GREEN
+                                f_surf = font_table.render(val, True, color)
+                                screen.blit(f_surf, f_surf.get_rect(center=(col_x + box_width // 2, cell_y + box_height // 2)))
+
+            # Centered Analysis Readout Summaries
+            base_summary_y = start_y + (box_height + 60) + (capacity * box_height)
+            
+            faults_txt = f"Total Page Faults: {total_page_faults}"
+            faults_surf = font_setup.render(faults_txt, True, NEON_GREEN) 
+            screen.blit(faults_surf, faults_surf.get_rect(center=(SCREEN_WIDTH // 2, base_summary_y)))
+            
+            prompt_txt = "Press [SPACE] or [ENTER] to start a new calculation"
+            prompt_surf = font_title.render(prompt_txt, True, NEON_GREEN)
+            screen.blit(prompt_surf, prompt_surf.get_rect(center=(SCREEN_WIDTH // 2, base_summary_y + 70)))
+
+        pygame.display.flip()
+        clock.tick(30)
+
+if __name__ == "__main__":
+    main_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Virtual Memory MFU Page Replacement")
+    mfu_menu(main_screen)
