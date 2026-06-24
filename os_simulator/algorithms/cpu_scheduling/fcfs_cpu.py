@@ -16,9 +16,16 @@ class Process_FCFS:
     def calc_tat(self):
         return self.completion_time - self.arrival_time
     
+    def calc_wt(self):
+        return self.calc_tat() - self.burst_time
+    
     def fcfs_scheduling(processes):
-        # Sort processes by arrival time
-        processes.sort(key=lambda x: x.arrival_time)
+        # Sort processes by arrival time, check if there are any processes to schedule
+        if processes:
+            processes.sort(key=lambda x: x.arrival_time)
+        else: 
+            print("No processes to schedule.")
+            return [], [], [], 0, 0  # No processes to schedule, return empty lists and average TAT and WT of 0
         
         prev_completion_time = 0
         for process in processes:
@@ -31,5 +38,11 @@ class Process_FCFS:
 
         # Calculate average TAT
         avg_tat = sum(tat_list) / len(tat_list)
+
+        # Calculate Waiting Time (WT) for each process
+        wt_list = [process.calc_wt() for process in processes]
+
+        # Calculate average WT
+        avg_wt = sum(wt_list) / len(wt_list)
         
-        return processes, tat_list, avg_tat
+        return processes, tat_list, wt_list, avg_tat, avg_wt

@@ -23,20 +23,40 @@ class Process_SJF:
             return True  # Process has completed execution
         return False  # Process is still running
     
+    def calc_wt(self):
+        return self.calc_tat() - self.burst_time
+    
     def sjf_sched_nonpre(processes: list):
-        # Sort processes by arrival time and then by burst time
-        processes.sort(key=lambda x: (x.arrival_time, x.burst_time))
 
         # Initialize a list of completed processes
         completed_processes = []
 
-        while processes:
-            # time that has passed since the start of scheduling
-            time = 0
-            # Arrived processes that are ready to execute
-            ready_processes = []
+        # time that has passed since the start of scheduling
+        time = 0
 
-            current_process = processes[0]  # The process with the earliest arrival time and shortest burst time
+        # Arrived processes that are ready to execute
+        ready_processes = []
+        
+        # Protocol to handle the case when there are no ready processes at the current time
+        if processes:
+            # Sort processes by arrival time and then by burst time
+            processes.sort(key=lambda x: (x.arrival_time, x.burst_time))
+            while not ready_processes:
+                # Get the ready processes that have arrived by the current time
+                for process in processes:
+                    if process.arrival_time <= time and process not in ready_processes:
+                        ready_processes.append(process)
+
+                if not ready_processes:
+                    time += 1
+                    continue
+        # else: no processes to schedule, return empty lists and average TAT of 0
+        else:
+            print("No processes to schedule.")
+            return [], [], [], 0, 0  # No processes to schedule, return empty lists and average TAT and WT of 0
+
+        current_process = ready_processes[0]  # The process with the earliest arrival time and shortest burst time
+        while processes:
             
             # Get the next process to execute based on SJF
             while current_process.remaining_time > 0:
@@ -51,6 +71,9 @@ class Process_SJF:
                 # If current process is completed, sort ready processes by burst time, select next process,
                 # remove current process from processes, and calculate completion time for current process
                 if current_process.execute():
+                    for process in processes:
+                        if process.arrival_time <= time and process not in ready_processes:
+                            ready_processes.append(process)
                     ready_processes.sort(key=lambda x: x.burst_time)  # Sort ready processes by burst time
                     current_process.calc_ct(prev_completion_time=time)  # Calculate completion time for current process
                     completed_processes.append(current_process) # Add current process to completed processes
@@ -69,8 +92,14 @@ class Process_SJF:
 
         # Calculate average TAT
         avg_tat = sum(tat_list) / len(tat_list)
+
+        # Calculate Waiting Time (WT) for each process
+        wt_list = [process.calc_wt() for process in completed_processes]
+
+        # Calculate average WT
+        avg_wt = sum(wt_list) / len(wt_list)
         
-        return completed_processes, tat_list, avg_tat
+        return completed_processes, tat_list, wt_list, avg_tat, avg_wt
     
     def sjf_sched_pre(processes: list):
         # Sort processes by arrival time and then by burst time
@@ -79,13 +108,31 @@ class Process_SJF:
         # Initialize a list of completed processes
         completed_processes = []
 
-        while processes:
-            # time that has passed since the start of scheduling
-            time = 0
-            # Arrived processes that are ready to execute
-            ready_processes = []
+        # time that has passed since the start of scheduling
+        time = 0
+        
+        # Arrived processes that are ready to execute
+        ready_processes = []
 
-            current_process = processes[0]  # The process with the earliest arrival time and shortest burst time
+        # Protocol to handle the case when there are no ready processes at the current time
+        if processes: 
+            while not ready_processes:
+                # Get the ready processes that have arrived by the current time
+                for process in processes:
+                    if process.arrival_time <= time and process not in ready_processes:
+                        ready_processes.append(process)
+
+                if not ready_processes:
+                    time += 1
+                    continue
+        else: 
+            print("No processes to schedule.")
+            return [], [], [], 0, 0  # No processes to schedule, return empty lists and average TAT and WT of 0
+
+
+        current_process = ready_processes[0]  # The process with the earliest arrival time and shortest burst time
+
+        while processes:
             
             # Get the next process to execute based on SJF
             while current_process.remaining_time > 0:
@@ -93,6 +140,13 @@ class Process_SJF:
                 for process in processes:
                     if process.arrival_time <= time and process not in ready_processes:
                         ready_processes.append(process)
+                        ready_processes.sort(key=lambda x: x.burst_time)  # Sort ready processes by burst time
+                    if process in ready_processes and process.remaining_time < current_process.remaining_time:
+                        current_process = process  # Preempt current process if a shorter job arrives
+                        # If a new process arrives with equal remaining time, we will not preempt the current process, 
+                        # as it is already executing and has the same remaining time as the new process. 
+                        # This is a common tie-breaking rule in SJF scheduling to avoid unnecessary context switches when two processes have the same remaining time. 
+                        # We will continue executing the current process until it completes or a new process arrives with a shorter remaining time.
                 
                 # Increment time and decrement the remaining time of the current process
                 time += 1
@@ -116,6 +170,20 @@ class Process_SJF:
                         for process in ready_processes:
                             if process.remaining_time < current_process.remaining_time:
                                 current_process = process  # Preempt current process if a shorter job arrives
-                                break  # Break out of the loop to switch to the new current process
+                                continue  # Continue to next iteration to check for newly arrived processes and execute the new current process
                             else:
                                 continue
+
+        # Calculate Turnaround Time (TAT) for each process
+        tat_list = [process.calc_tat() for process in completed_processes]
+
+        # Calculate average TAT
+        avg_tat = sum(tat_list) / len(tat_list)
+
+        # Calculate Waiting Time (WT) for each process
+        wt_list = [process.calc_wt() for process in completed_processes]
+
+        # Calculate average WT
+        avg_wt = sum(wt_list) / len(wt_list)
+
+        return completed_processes, tat_list, wt_list, avg_tat, avg_wt
