@@ -15,7 +15,7 @@ class BestAvailableFit:
         
         self.jobs.append(process_data)
 
-    def mft_settings(self):
+    def best_available_fit_settings(self):
         if self.memory_size is None:
             while True:
                 try:
@@ -46,7 +46,7 @@ class BestAvailableFit:
                 print("Process size and burst time should be positive integers. Please input valid numbers.")  
     
 
-    def mft_logic(self):
+    def best_available_fit_logic(self):
         mft_partitions = list(self.memory_size)
         partition_count = len(mft_partitions)
         if self.partition_busy is None:
@@ -92,5 +92,5 @@ if __name__ == "__main__":
     print("Welcome to the Best-Available-Fit Memory Management Algorithm Simulator!")
    
     while True:
-        best_available_fit.mft_settings()
-        best_available_fit.mft_logic()
+        best_available_fit. best_available_fit_settings()
+        best_available_fit.best_available_fit_logic()
