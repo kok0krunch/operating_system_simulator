@@ -115,10 +115,6 @@ class BestAvailableFit:
             except:
                 print("Process size and burst time should be positive integers. Please input valid numbers.")  
 
-
-    def mvt_logic(self, compaction_enabled=False):
-        pass
-    
 # definitions
 def user_input(best_available_fit):
     while True:
