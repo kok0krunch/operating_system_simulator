@@ -102,8 +102,6 @@ class Process_SJF:
         return completed_processes, tat_list, wt_list, avg_tat, avg_wt
     
     def sjf_sched_pre(processes: list):
-        # Sort processes by arrival time and then by burst time
-        processes.sort(key=lambda x: (x.arrival_time, x.burst_time))
 
         # Initialize a list of completed processes
         completed_processes = []
@@ -116,6 +114,8 @@ class Process_SJF:
 
         # Protocol to handle the case when there are no ready processes at the current time
         if processes: 
+            # Sort processes by arrival time and then by burst time
+            processes.sort(key=lambda x: (x.arrival_time, x.burst_time))
             while not ready_processes:
                 # Get the ready processes that have arrived by the current time
                 for process in processes:
@@ -143,6 +143,7 @@ class Process_SJF:
                         ready_processes.sort(key=lambda x: x.burst_time)  # Sort ready processes by burst time
                     if process in ready_processes and process.remaining_time < current_process.remaining_time:
                         current_process = process  # Preempt current process if a shorter job arrives
+                        continue
                         # If a new process arrives with equal remaining time, we will not preempt the current process, 
                         # as it is already executing and has the same remaining time as the new process. 
                         # This is a common tie-breaking rule in SJF scheduling to avoid unnecessary context switches when two processes have the same remaining time. 
@@ -154,6 +155,10 @@ class Process_SJF:
                 # If current process is completed, sort ready processes by burst time, select next process,
                 # remove current process from processes, and calculate completion time for current process
                 if current_process.execute():
+                    # Check for newly arrived processes before re-sorting and calculating completion time
+                    for process in processes:
+                        if process.arrival_time <= time and process not in ready_processes:
+                            ready_processes.append(process)
                     ready_processes.sort(key=lambda x: x.burst_time)  # Sort ready processes by burst time
                     current_process.calc_ct(prev_completion_time=time)  # Calculate completion time for current process
                     completed_processes.append(current_process) # Add current process to completed processes

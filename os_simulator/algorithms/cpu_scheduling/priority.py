@@ -77,4 +77,107 @@ class Process_prio:
                     processes.remove(current_process)  # Remove current process from processes
                     current_process = ready_processes[0] if ready_processes else None  # Select the next process to execute
                     break  # Exit the loop to select the next process
+
+        # Calculate Turnaround Time (TAT) for each process
+        tat_list = [process.calc_tat() for process in completed_processes]
+
+        # Calculate average TAT
+        avg_tat = sum(tat_list) / len(tat_list)
+
+        # Calculate Waiting Time (WT) for each process
+        wt_list = [process.calc_wt() for process in completed_processes]
+
+        # Calculate average WT
+        avg_wt = sum(wt_list) / len(wt_list)
+
+        return completed_processes, tat_list, wt_list, avg_tat, avg_wt
+    
+    def prio_sched_pre(processes: list):
+        # Initialize a time variable to keep track of the current time since the start of scheduling
+        time = 0 
+
+        # Initialize a list of completed processes
+        completed_processes = []   
+
+        # Initialize a list of ready processes that have arrived and are ready to execute
+        ready_processes = []
+
+        # Initialize a boolean whether to preempt or not, if a higher priority process arrives
+        preempt = False
+
+        # Protocol for case of no processes to schedule, return empty lists and average TAT and WT of 0
+        if processes:
+            processes.sort(key=lambda x: (x.arrival_time, x.priority))
+            while not ready_processes:
+                for process in processes:
+                    if process.arrival_time <= time and process not in ready_processes:
+                        ready_processes.append(process)
+                    if not ready_processes:
+                        time += 1
+                        continue
+        else:
+            print("No processes to schedule.")
+            return [], [], [], 0, 0  # No processes to schedule, return empty lists and average TAT and WT of 0
+        
+        current_process = ready_processes[0]  # The process with the earliest arrival time and highest priority
+
+        while processes:
+            # Get the ready processes that have arrived by the current time
+            for process in processes:
+                if process.arrival_time <= time and process not in ready_processes:
+                    ready_processes.append(process)
+                    ready_processes.sort(key=lambda x: x.priority)  # Sort ready processes by priority (lower number indicates higher priority)
+                    # If a new process arrives with higher priority than the current process, preempt the current process
+                    if process.priority < current_process.priority and current_process in ready_processes:
+                        current_process = process  # Preempt current process if a higher priority job arrives
+                        continue
+            
+            # If there are no ready processes at time, increment time and continue to the next iteration
+            if not ready_processes:
+                time += 1
+                continue
+
+            # Execute the current process until it completes
+            while current_process.remaining_time > 0:
+                time += 1  # Increment time
+                # Execute the current process
+                if current_process.execute():
+                    current_process.calc_ct(prev_completion_time=time)  # Calculate completion time for current process
+                    completed_processes.append(current_process)  # Add current process to completed processes
+                    if current_process in ready_processes:
+                        ready_processes.remove(current_process)  # Remove current process from ready processes
+                    processes.remove(current_process)  # Remove current process from processes
+                else: 
+                    # Get the ready processes that have arrived by the current time
+                    for process in processes:
+                        if process.arrival_time <= time and process not in ready_processes:
+                            ready_processes.append(process)
+                            ready_processes.sort(key=lambda x: x.priority)  # Sort ready processes by priority (lower number indicates higher priority)
+                        # If a new process arrives with higher priority than the current process, preempt the current process
+                        if process.priority < current_process.priority and current_process in ready_processes:
+                            current_process = process  # Preempt current process if a higher priority job arrives
+                            preempt = True
+                            continue  # continue the for loop to select the next process
+
+                    # If preempt is True, break the while loop to select the next process
+                    if preempt:
+                        preempt = False
+                        break  # Exit the loop to select the next process
+
+                    continue # Continue iterating if preemption is not required and the current process is still executing
+        
+        # Calculate Turnaround Time (TAT) for each process
+        tat_list = [process.calc_tat() for process in completed_processes]
+
+        # Calculate average TAT
+        avg_tat = sum(tat_list) / len(tat_list)
+
+        # Calculate Waiting Time (WT) for each process
+        wt_list = [process.calc_wt() for process in completed_processes]
+
+        # Calculate average WT
+        avg_wt = sum(wt_list) / len(wt_list)
+
+        return completed_processes, tat_list, wt_list, avg_tat, avg_wt
+                    
     
