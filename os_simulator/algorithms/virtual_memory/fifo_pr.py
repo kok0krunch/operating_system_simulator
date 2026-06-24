@@ -9,7 +9,7 @@ NEON_GREEN = (57, 255, 20)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 
-# Scaled Down Screen Size (Keeps the exact 16:9 ratio of 1920x1080)
+# Screen Size Dimensions
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
@@ -32,18 +32,16 @@ def fifo_menu(screen):
     font_path = "os_simulator\\components\\VT323-Regular.ttf"
     if not os.path.exists(font_path):
         print(f"CRITICAL ERROR: The font file '{font_path}' was not found in the directory.")
-        print("Please place the 'VT323-Regular.ttf' file in the same folder as this script.")
         pygame.quit()
         sys.exit()
 
-    # Define font instances strictly using the uploaded TTF file
+    # Define font instances
     font_title = pygame.font.Font(font_path, 36) 
     font_setup = pygame.font.Font(font_path, 46) 
-    font_input = pygame.font.Font(font_path, 48)
+    font_input = pygame.font.Font(font_path, 48) 
     font_table = pygame.font.Font(font_path, 32) 
 
     # State machine variables
-    # States: 0 = Input Capacity, 1 = Input Pages, 2 = Display Simulation Table
     state = 0
     capacity_input = ""
     pages_input = ""
@@ -75,7 +73,6 @@ def fifo_menu(screen):
                 pointer = (pointer + 1) % cap
                 status = "FAULT"
             
-            # Save snapshots along with the tracking index of what changed
             readable_frames = [str(f) if f is not None else "" for f in frames]
             steps.append({
                 "page": page,
@@ -90,11 +87,24 @@ def fifo_menu(screen):
     # Main UI loop
     running = True
     while running:
+        mouse_pos = pygame.mouse.get_pos()
+        
+        # Pre-create the < BACK button interaction area at the bottom left coordinates
+        back_surf_idle = font_setup.render("< BACK", True, NEON_GREEN)
+        back_rect = back_surf_idle.get_rect(topleft=(30, 650))
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
                 
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left Click
+                    # Click check: breaks loop stack and returns cleanly to main VM menu selector
+                    if back_rect.collidepoint(mouse_pos):
+                        running = False
+                        return
+
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
@@ -110,7 +120,7 @@ def fifo_menu(screen):
                         else:
                             try:
                                 capacity = int(raw)
-                                if capacity <= 0 or capacity > 7:  # Bound to avoid breaking visual UI height
+                                if capacity <= 0 or capacity > 7:
                                     raise ValueError
                                 state = 1
                                 error_message = ""
@@ -131,7 +141,7 @@ def fifo_menu(screen):
                             page_sequence = [int(p.strip()) for p in raw.split(',') if p.strip() != ""]
                             if not page_sequence:
                                 error_message = "Please enter at least one page number."
-                            elif len(page_sequence) > 20:  # Bound to keep rows horizontally scale-friendly
+                            elif len(page_sequence) > 20:
                                 error_message = "Sequence is too long! Keep it under 20 pages."
                             else:
                                 error_message = ""
@@ -192,7 +202,7 @@ def fifo_menu(screen):
 
             if error_message:
                 err_surf = font_title.render(error_message, True, NEON_GREEN)
-                screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 150)))
+                screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 180)))
 
         elif state == 2:
             # 3. Diagram Simulation Grid Map Layout
@@ -235,6 +245,15 @@ def fifo_menu(screen):
             prompt_txt = "Press [SPACE] or [ENTER] to start a new calculation"
             prompt_surf = font_title.render(prompt_txt, True, NEON_GREEN)
             screen.blit(prompt_surf, prompt_surf.get_rect(center=(SCREEN_WIDTH // 2, base_summary_y + 70)))
+
+        # 4. Render the Interactive < BACK Button (Visible on ALL states/outputs)
+        if back_rect.collidepoint(mouse_pos):
+            pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
+            back_surface = font_setup.render("< BACK", True, BLACK)
+        else:
+            back_surface = font_setup.render("< BACK", True, NEON_GREEN)
+            
+        screen.blit(back_surface, back_rect.topleft)
 
         pygame.display.flip()
         clock.tick(30)

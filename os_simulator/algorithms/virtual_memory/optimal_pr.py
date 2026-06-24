@@ -1,3 +1,5 @@
+# Optimal Page Replacement Algorithm
+
 import pygame
 import sys
 import os
@@ -7,7 +9,7 @@ NEON_GREEN = (57, 255, 20)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 
-# Scaled Down Screen Size (Keeps the exact 16:9 ratio of 1920x1080)
+# Screen Size
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
@@ -114,11 +116,23 @@ def optimal_menu(screen):
     # Main UI loop
     running = True
     while running:
+        mouse_pos = pygame.mouse.get_pos()
+        
+        # Positioned more to the right at x = 60
+        back_surf_idle = font_setup.render("< BACK", True, NEON_GREEN)
+        back_rect = back_surf_idle.get_rect(topleft=(30, 650))
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
                 
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left Click
+                    if back_rect.collidepoint(mouse_pos):
+                        running = False
+                        return
+
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     running = False
@@ -263,6 +277,15 @@ def optimal_menu(screen):
             prompt_txt = "Press [SPACE] or [ENTER] to start a new calculation"
             prompt_surf = font_title.render(prompt_txt, True, NEON_GREEN)
             screen.blit(prompt_surf, prompt_surf.get_rect(center=(SCREEN_WIDTH // 2, base_summary_y + 70)))
+
+        # 4. Render the Interactive < BACK Button
+        if back_rect.collidepoint(mouse_pos):
+            pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
+            back_surface = font_setup.render("< BACK", True, BLACK)
+        else:
+            back_surface = font_setup.render("< BACK", True, NEON_GREEN)
+            
+        screen.blit(back_surface, back_rect.topleft)
 
         pygame.display.flip()
         clock.tick(30)
