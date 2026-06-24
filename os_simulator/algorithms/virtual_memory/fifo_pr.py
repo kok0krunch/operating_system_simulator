@@ -1,4 +1,7 @@
 # First-In, First-Out (FIFO) Page Replacement Algorithm
+import pygame
+
+
 
 class FIFOPageReplacement:
     def __init__(self, capacity=3): # Default capacity of page frames is set to 3, can be changed by user input
