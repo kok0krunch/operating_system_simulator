@@ -5,12 +5,20 @@ import sys
 import os
 
 # Import algorithm paths
-from .fifo_pr import fifo_menu
-from .optimal_pr import optimal_menu
-from .lru_pr import lru_menu
-from .mru_pr import mru_menu
-from .lfu_pr import lfu_menu
-from .mfu_pr import mfu_menu
+try:
+    from .fifo_pr import fifo_menu
+    from .optimal_pr import optimal_menu
+    from .lru_pr import lru_menu
+    from .mru_pr import mru_menu
+    from .lfu_pr import lfu_menu
+    from .mfu_pr import mfu_menu
+except ImportError:
+    from fifo_pr import fifo_menu
+    from optimal_pr import optimal_menu
+    from lru_pr import lru_menu
+    from mru_pr import mru_menu
+    from lfu_pr import lfu_menu
+    from mfu_pr import mfu_menu
 
 # Constants & Configurations
 NEON_GREEN = (57, 255, 20)
@@ -41,6 +49,7 @@ def main_vm_menu():
 
     font_header = pygame.font.Font(font_path, 100)
     font_button = pygame.font.Font(font_path, 38)
+    font_back = pygame.font.Font(font_path, 46)
 
     # Menu Options Mapping
     menu_options = [
@@ -67,6 +76,8 @@ def main_vm_menu():
     running = True
     while running:
         mouse_pos = pygame.mouse.get_pos()
+        back_surf_idle = font_back.render("< BACK", True, NEON_GREEN)
+        back_rect = back_surf_idle.get_rect(topleft=(30, 650))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -76,6 +87,10 @@ def main_vm_menu():
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left Click Action Node
+                    if back_rect.collidepoint(mouse_pos):
+                        running = False
+                        return
+
                     for rect, text, func in button_rects:
                         if rect.collidepoint(mouse_pos):
                             # Pass the screen variable into your standalone module loops
@@ -108,7 +123,7 @@ def main_vm_menu():
 
             if is_hovered:
                 # Hovered State: Solid Neon Green container box, text becomes Black
-                pygame.draw.rect(screen, NEON_GREEN, rect, 0, 4) 
+                pygame.draw.rect(screen, NEON_GREEN, rect, 0, 4)
                 text_surf = font_button.render(text, True, BLACK)
             else:
                 # Idle State: Transparent box background, text stays Neon Green
@@ -117,6 +132,14 @@ def main_vm_menu():
             # Center text perfectly inside the target box boundaries
             text_rect = text_surf.get_rect(center=rect.center)
             screen.blit(text_surf, text_rect)
+
+        # Render Back Button Option
+        if back_rect.collidepoint(mouse_pos):
+            pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
+            back_surf = font_back.render("< BACK", True, BLACK)
+        else:
+            back_surf = font_back.render("< BACK", True, NEON_GREEN)
+        screen.blit(back_surf, back_rect.topleft)
 
         pygame.display.flip()
         clock.tick(30)
