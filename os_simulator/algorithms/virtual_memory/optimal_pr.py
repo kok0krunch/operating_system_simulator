@@ -9,7 +9,7 @@ NEON_GREEN = (57, 255, 20)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 
-# Screen Size
+# Scaled Down Screen Size (Keeps the exact 16:9 ratio of 1920x1080)
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
@@ -118,7 +118,6 @@ def optimal_menu(screen):
     while running:
         mouse_pos = pygame.mouse.get_pos()
         
-        # Positioned more to the right at x = 60
         back_surf_idle = font_setup.render("< BACK", True, NEON_GREEN)
         back_rect = back_surf_idle.get_rect(topleft=(30, 650))
 
