@@ -5,12 +5,12 @@ import sys
 import os
 
 # Import algorithm paths
-from fifo_pr import fifo_menu
-from optimal_pr import optimal_menu
-from lru_pr import lru_menu
-from mru_pr import mru_menu
-from lfu_pr import lfu_menu
-from mfu_pr import mfu_menu
+from .fifo_pr import fifo_menu
+from .optimal_pr import optimal_menu
+from .lru_pr import lru_menu
+from .mru_pr import mru_menu
+from .lfu_pr import lfu_menu
+from .mfu_pr import mfu_menu
 
 # Constants & Configurations
 NEON_GREEN = (57, 255, 20)
