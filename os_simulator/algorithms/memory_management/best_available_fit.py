@@ -72,17 +72,29 @@ def baf_menu(screen):
                         if raw != "":
                             try:
                                 size_list = [int(s.strip()) for s in raw.split(',') if s.strip() != ""]
+                                
+                                # Check maximum partition size limit
+                                if len(size_list) > 5:
+                                    error_message = "Too many partitions! Maximum allowed is 5."
+                                    raise ValueError
+                                
+                                # Check for invalid zero or negative integers
                                 if any(val <= 0 for val in size_list):
+                                    error_message = "Sizes must be positive integers!"
                                     raise ValueError
                                 if not size_list:
                                     raise ValueError
                                 
+                                # If all checks pass safely, advance the state machine
                                 memory_size = size_list
                                 partition_busy = [False] * len(memory_size)
                                 state = 1
                                 error_message = ""
                             except ValueError:
-                                error_message = "Sizes must be positive integers! (ex. 100,200,300)"
+                                # Fallback message if specific error flags weren't caught above
+                                if not error_message:
+                                    error_message = "Sizes must be positive integers! (ex. 100,200,300)"
+                                # NOTE: We do not clear partitions_input here, so it stays on screen!
                         else:
                             error_message = "Input cannot be empty!"
                     elif event.key == pygame.K_BACKSPACE:
@@ -172,8 +184,9 @@ def baf_menu(screen):
 
         # 2. Rendering Content States
         if state == 0:
-            txt1 = "Initialize the Fixed Partition Arrays Map"
+            txt1 = "Initialize the Fixed Partition Memory Map"
             txt2 = "Enter memory block partitions separated with commas"
+            txt5 = "Memory partition is limited to 5 parts only"
             txt3 = "(e.g., 200,400,150):"
             txt4 = f"[{partitions_input}]"
 
@@ -181,11 +194,13 @@ def baf_menu(screen):
             surf2 = font_input.render(txt2, True, NEON_GREEN)
             surf3 = font_input.render(txt3, True, NEON_GREEN)
             surf4 = font_input.render(txt4, True, NEON_GREEN)
+            surf5 = font_input.render(txt5, True, NEON_GREEN)
 
             screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 140)))
             screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 80)))
             screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 95)))
             screen.blit(surf4, surf4.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 155)))
+            screen.blit(surf5, surf5.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 20)))
 
         elif state == 1:
             # 1. Setup Text Prompts (Shifted higher to make room below)
