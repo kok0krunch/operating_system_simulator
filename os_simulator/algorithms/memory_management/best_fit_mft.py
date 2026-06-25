@@ -13,7 +13,7 @@ SCREEN_HEIGHT = 720
 def mft_menu(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Best-Fit Algorithm")
+    pygame.display.set_caption("Best-Fit Algorithm (MFT)")
     clock = pygame.time.Clock()
 
     try:
