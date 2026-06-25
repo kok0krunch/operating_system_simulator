@@ -41,8 +41,6 @@ def baf_menu(screen):
     state = 0 
     partitions_input = ""
     proc_size_input = ""
-    proc_burst_input = ""
-    active_field = "size" 
     error_message = ""
 
     # Main UI loop
@@ -95,15 +93,12 @@ def baf_menu(screen):
                         if event.unicode.isdigit() or event.unicode == ',':
                             partitions_input += event.unicode
 
-                elif state == 1:  # Step 2: Add Multiple Processes
-                    if event.key == pygame.K_TAB:
-                        active_field = "burst" if active_field == "size" else "size"
-                    elif event.key == pygame.K_RETURN:
-                        if proc_size_input.strip() != "" and proc_burst_input.strip() != "":
+                elif state == 1:  # Step 2: Add Multiple Processes (Size Only)
+                    if event.key == pygame.K_RETURN:
+                        if proc_size_input.strip() != "":
                             try:
                                 s_val = int(proc_size_input.strip())
-                                b_val = int(proc_burst_input.strip())
-                                if s_val <= 0 or b_val <= 0:
+                                if s_val <= 0:
                                     raise ValueError
                                 
                                 # --- INLINE INTEGRATED BEST-AVAILABLE-FIT LOGIC ---
@@ -111,7 +106,6 @@ def baf_menu(screen):
                                 job_item = {
                                     "process_id": f"P{process_number}",
                                     "size": s_val,
-                                    "burst_time": b_val,
                                     "allocated_partition": None,
                                     "fragmentation": 0
                                 }
@@ -154,36 +148,65 @@ def baf_menu(screen):
                                 # ---------------------------------------------------
                                 
                                 proc_size_input = ""
-                                proc_burst_input = ""
-                                active_field = "size"
                                 error_message = ""
                             except ValueError:
                                 error_message = "Values must be positive numbers greater than 0!"
                         else:
-                            error_message = "Fill both fields! Press TAB to shift focus."
+                            error_message = "Please enter a process size!"
                     elif event.key == pygame.K_BACKSPACE:
-                        if active_field == "size":
-                            proc_size_input = proc_size_input[:-1]
-                        else:
-                            proc_burst_input = proc_burst_input[:-1]
+                        proc_size_input = proc_size_input[:-1]
                     else:
                         if event.unicode.isdigit():
-                            if active_field == "size":
-                                proc_size_input += event.unicode
-                            else:
-                                proc_burst_input += event.unicode
+                            proc_size_input += event.unicode
 
-                elif state == 2:  # Step 3: View & Clear Variables on Reset
-                    if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
-                        state = 0
-                        partitions_input = ""
-                        proc_size_input = ""
-                        proc_burst_input = ""
-                        jobs = []
-                        memory_size = None
-                        partition_busy = None
-                        error_message = ""
-
-        # Rendering base layer graphics
+        # Rendering Background Graphics
         if background:
             screen.blit(background, (0, 0))
+        else:
+            screen.fill(BLACK)
+
+        # 1. Top Left Header Panel
+        title_surface = font_title.render("MEMORY MANAGEMENT: Best-Available-Fit Algorithm", True, BLACK)
+        screen.blit(title_surface, (20, 10))
+
+        # 2. Rendering Content States
+        if state == 0:
+            txt1 = "Initialize the Fixed Partition Arrays Map"
+            txt2 = "Enter memory block partitions separated with commas (e.g., 200,400,150):"
+            txt3 = f"[{partitions_input}]"
+
+            surf1 = font_input.render(txt1, True, NEON_GREEN)
+            surf2 = font_input.render(txt2, True, NEON_GREEN)
+            surf3 = font_input.render(txt3, True, NEON_GREEN)
+
+            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 140)))
+            screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 80)))
+            screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 95)))
+
+        elif state == 1:
+            part_str = ",".join(map(str, memory_size))
+            txt1 = f"Add Incoming Tasks to Fixed Partitions Matrix [{part_str}]"
+            txt2 = f"Enter Process Size:  {proc_size_input}"
+            txt3 = "Press [ENTER] to execute evaluation logic."
+
+            surf1 = font_input.render(txt1, True, NEON_GREEN)
+            surf2 = font_input.render(txt2, True, NEON_GREEN)
+            surf3 = font_table.render(txt3, True, NEON_GREEN)
+
+            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 140)))
+            screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40)))
+            screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 40)))
+
+            if error_message:
+                err_surf = font_title.render(error_message, True, RED)
+                screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 120)))
+
+        # 4. Render the Interactive < BACK Button
+        if back_rect.collidepoint(mouse_pos):
+            pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
+            back_surface = font_setup.render("< BACK", True, BLACK)
+        else:
+            back_surface = font_setup.render("< BACK", True, NEON_GREEN)
+            screen.blit(back_surface, back_rect.topleft)
+            pygame.display.flip()
+            clock.tick(30)
