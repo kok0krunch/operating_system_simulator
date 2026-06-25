@@ -100,7 +100,7 @@ RED = (255, 0, 0)
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
-def wf_menu(screen):
+def baf_menu(screen):
     pygame.init()
     clock = pygame.time.Clock()
 
@@ -159,7 +159,7 @@ def wf_menu(screen):
             screen.fill(BLACK)
 
         # 1. Top Left Header Panel
-        title_surface = font_title.render("MEMORY MANAGEMENT: Worst-Fit Algorithm", True, BLACK)
+        title_surface = font_title.render("MEMORY MANAGEMENT: Best-Available-Fit Algorithm", True, BLACK)
         screen.blit(title_surface, (20, 10))
 
         # 2. Setup Screen Interactions 
@@ -180,5 +180,5 @@ def wf_menu(screen):
 
 if __name__ == "__main__":
     main_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Memory Management Worst Fit Algorithm")
-    wf_menu(main_screen)
+    pygame.display.set_caption("Memory Management Best-Avaialble Fit Algorithm")
+    baf_menu(main_screen)
