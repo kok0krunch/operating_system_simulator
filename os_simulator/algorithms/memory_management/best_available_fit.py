@@ -172,16 +172,20 @@ def baf_menu(screen):
         # 2. Rendering Content States
         if state == 0:
             txt1 = "Initialize the Fixed Partition Arrays Map"
-            txt2 = "Enter memory block partitions separated with commas (e.g., 200,400,150):"
-            txt3 = f"[{partitions_input}]"
+            txt2 = "Enter memory block partitions separated with commas"
+            txt3 = "(e.g., 200,400,150):"
+            txt4 = f"[{partitions_input}]"
 
             surf1 = font_input.render(txt1, True, NEON_GREEN)
             surf2 = font_input.render(txt2, True, NEON_GREEN)
             surf3 = font_input.render(txt3, True, NEON_GREEN)
+            surf4 = font_input.render(txt4, True, NEON_GREEN)
 
             screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 140)))
             screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 80)))
             screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 95)))
+            screen.blit(surf4, surf4.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 165)))
+
 
         elif state == 1:
             part_str = ",".join(map(str, memory_size))
