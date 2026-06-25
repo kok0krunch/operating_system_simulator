@@ -10,6 +10,7 @@ from meet_the_devs import show_devs
 
 # Import the topic-specific algorithm menu modules for the simulator
 from algorithms.virtual_memory.vm_pygame import main_vm_menu
+from algorithms.memory_management.mm_main_menu import mm_main_menu
 
 # Constants & Configurations
 NEON_GREEN = (57, 255, 20)
@@ -109,10 +110,8 @@ def main():
                                     print("CPU Scheduling chosen (Developer Incomplete)")
                                     
                                 elif action == "MM":
-                                    # TODO: Collaborators add their file import and main function call here
-                                    # Example: from os_simulator.algorithms.mem.mem_pygame import main_mem_menu
-                                    #          main_mem_menu(screen)
-                                    print("Memory Management chosen (Developer Incomplete)")
+                                    mm_main_menu()
+                                    pygame.display.set_caption("Operating System Simulator")
                                     
                                 elif action == "VM":
                                     # Virtual Memory is complete and safely linked
