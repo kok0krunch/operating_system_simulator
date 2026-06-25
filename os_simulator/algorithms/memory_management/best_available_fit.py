@@ -2,96 +2,7 @@ import pygame
 import sys
 import os
 
-class BestAvailableFit:
-    def __init__(self):
-        self.memory_size = None
-        self.jobs=[]
-        self.partition_busy = None
-
-    def add_process(self, process_size_input, burst_time_input):
-        process_number = len(self.jobs) + 1
-        process_data = {
-                        "process_id": f"P{process_number}",
-                        "size": int(process_size_input),
-                        "burst_time": int(burst_time_input),
-                        "allocated_partition": None,
-                        "fragmentation": 0}
-        
-        self.jobs.append(process_data)
-
-    def best_available_fit_settings(self):
-        if self.memory_size is None:
-            while True:
-                try:
-                    memory_size_input = input("Enter partitions separated with comma (ex. 1,2,3): ").strip()
-                    memory_size_list = [int(size.strip()) for size in memory_size_input.split(',')]
-                    for size in memory_size_list:
-                        if int(size) <= 0:
-                            raise ValueError
-                        
-                    self.memory_size=memory_size_list
-                    break
-
-                except:
-                    print("Memory sizes should only be positive integers. Voiding initial inputs")
-
-        while True:
-            try:
-                process_size_input= input("enter process size: ").strip()
-                burst_time_input= input("enter burst time: ").strip()
-
-                if int(process_size_input) > 0 and int(burst_time_input) > 0:
-                    self.add_process(process_size_input, burst_time_input)
-                    
-                elif int(process_size_input) <= 0 or int(burst_time_input) <= 0:
-                    raise ValueError
-                
-            except:
-                print("Process size and burst time should be positive integers. Please input valid numbers.")  
-    
-
-    def best_available_fit_logic(self):
-        mft_partitions = list(self.memory_size)
-        partition_count = len(mft_partitions)
-        if self.partition_busy is None:
-            self.partition_busy = [False] * partition_count
-
-        for job_item in self.jobs:
-            if job_item["allocated_partition"] is not None:
-                continue
-
-            optimal_index = -1
-            for block_index in range(partition_count):
-                if mft_partitions[block_index] >= job_item["size"] and not self.partition_busy[block_index]:
-                    if optimal_index == -1 or mft_partitions[block_index] < mft_partitions[optimal_index]:
-                        optimal_index = block_index
-            
-            if optimal_index != -1:
-                job_item["allocated_partition"] = optimal_index + 1
-                job_item["fragmentation"] = mft_partitions[optimal_index] - job_item["size"]
-                self.partition_busy[optimal_index] = True
-            
-            else:
-                available_swap_index = -1
-                for block_index in range(partition_count):
-                    if mft_partitions[block_index] >= job_item["size"]:
-                        if available_swap_index == -1 or mft_partitions[block_index] < mft_partitions[available_swap_index]:
-                            available_swap_index = block_index
-                
-                if available_swap_index != -1:
-                    for old_job in self.jobs:
-                        if old_job["allocated_partition"] == available_swap_index + 1:
-                            old_job["allocated_partition"] = "Swapped Out / Suspended"
-                            old_job["fragmentation"] = 0
-                    
-                    print(f"\n[!] Partition {available_swap_index + 1} is busy. Swapping out old process to make it AVAILABLE for {job_item['process_id']}.")
-                    job_item["allocated_partition"] = available_swap_index + 1
-                    job_item["fragmentation"] = mft_partitions[available_swap_index] - job_item["size"]
-                    self.partition_busy[available_swap_index] = True
-                else:
-                    job_item["allocated_partition"] = "Not Allocated (Too Large)"
-
-# Constants & Configurations
+#font colors
 NEON_GREEN = (57, 255, 20)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
@@ -106,35 +17,40 @@ def baf_menu(screen):
     pygame.display.set_caption("Best-Available-Fit Algorithm")
     clock = pygame.time.Clock()
 
-    # Load resources with fallbacks
     try:
         background = pygame.image.load("os_simulator\\components\\background.png").convert()
         background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
     except Exception:
         background = None
 
-    # Load the uploaded VT323-Regular.ttf font file explicitly
     font_path = "os_simulator\\components\\VT323-Regular.ttf"
     if not os.path.exists(font_path):
         print(f"CRITICAL ERROR: The font file '{font_path}' was not found in the directory.")
         pygame.quit()
         sys.exit()
 
-    # Define font instances
     font_title = pygame.font.Font(font_path, 36) 
     font_setup = pygame.font.Font(font_path, 46) 
     font_input = pygame.font.Font(font_path, 48) 
     font_table = pygame.font.Font(font_path, 32) 
 
-    def run_worst_fit():
-        pass
+    #Variables
+    memory_size = None      
+    jobs = []               
+    partition_busy = None
+    state = 0 
+    partitions_input = ""
+    proc_size_input = ""
+    proc_burst_input = ""
+    active_field = "size" 
+    error_message = ""
 
     # Main UI loop
     running = True
     while running:
         mouse_pos = pygame.mouse.get_pos()
         
-        # Pre-create the < BACK button interaction area at the bottom left coordinates
+        # Pre-create navigation hitboxes
         back_surf_idle = font_setup.render("< BACK", True, NEON_GREEN)
         back_rect = back_surf_idle.get_rect(topleft=(30, 650))
 
@@ -154,33 +70,120 @@ def baf_menu(screen):
                     running = False
                     return
 
-        # Rendering Background Graphics
+                if state == 0:  # Step 1: Input Partitions List
+                    if event.key == pygame.K_RETURN:
+                        raw = partitions_input.strip()
+                        if raw != "":
+                            try:
+                                size_list = [int(s.strip()) for s in raw.split(',') if s.strip() != ""]
+                                if any(val <= 0 for val in size_list):
+                                    raise ValueError
+                                if not size_list:
+                                    raise ValueError
+                                
+                                memory_size = size_list
+                                partition_busy = [False] * len(memory_size)
+                                state = 1
+                                error_message = ""
+                            except ValueError:
+                                error_message = "Sizes must be positive integers! (ex. 100,200,300)"
+                        else:
+                            error_message = "Input cannot be empty!"
+                    elif event.key == pygame.K_BACKSPACE:
+                        partitions_input = partitions_input[:-1]
+                    else:
+                        if event.unicode.isdigit() or event.unicode == ',':
+                            partitions_input += event.unicode
+
+                elif state == 1:  # Step 2: Add Multiple Processes
+                    if event.key == pygame.K_TAB:
+                        active_field = "burst" if active_field == "size" else "size"
+                    elif event.key == pygame.K_RETURN:
+                        if proc_size_input.strip() != "" and proc_burst_input.strip() != "":
+                            try:
+                                s_val = int(proc_size_input.strip())
+                                b_val = int(proc_burst_input.strip())
+                                if s_val <= 0 or b_val <= 0:
+                                    raise ValueError
+                                
+                                # --- INLINE INTEGRATED BEST-AVAILABLE-FIT LOGIC ---
+                                process_number = len(jobs) + 1
+                                job_item = {
+                                    "process_id": f"P{process_number}",
+                                    "size": s_val,
+                                    "burst_time": b_val,
+                                    "allocated_partition": None,
+                                    "fragmentation": 0
+                                }
+                                
+                                partition_count = len(memory_size)
+                                optimal_index = -1
+                                
+                                # Find smallest available partition that fits perfectly
+                                for block_index in range(partition_count):
+                                    if memory_size[block_index] >= job_item["size"] and not partition_busy[block_index]:
+                                        if optimal_index == -1 or memory_size[block_index] < memory_size[optimal_index]:
+                                            optimal_index = block_index
+                                
+                                if optimal_index != -1:
+                                    job_item["allocated_partition"] = optimal_index + 1
+                                    job_item["fragmentation"] = memory_size[optimal_index] - job_item["size"]
+                                    partition_busy[optimal_index] = True
+                                else:
+                                    # If busy, look for best partition to suspend / swap out
+                                    available_swap_index = -1
+                                    for block_index in range(partition_count):
+                                        if memory_size[block_index] >= job_item["size"]:
+                                            if available_swap_index == -1 or memory_size[block_index] < memory_size[available_swap_index]:
+                                                available_swap_index = block_index
+                                    
+                                if available_swap_index != -1:
+                                    # Evict process currently occupying this specific partition index
+                                    for old_job in jobs:
+                                        if old_job["allocated_partition"] == available_swap_index + 1:
+                                            old_job["allocated_partition"] = "Swapped Out"
+                                            old_job["fragmentation"] = 0
+                                        
+                                    job_item["allocated_partition"] = available_swap_index + 1
+                                    job_item["fragmentation"] = memory_size[available_swap_index] - job_item["size"]
+                                    partition_busy[available_swap_index] = True
+                                else:
+                                    job_item["allocated_partition"] = "Too Large"
+                                    
+                                jobs.append(job_item)
+                                # ---------------------------------------------------
+                                
+                                proc_size_input = ""
+                                proc_burst_input = ""
+                                active_field = "size"
+                                error_message = ""
+                            except ValueError:
+                                error_message = "Values must be positive numbers greater than 0!"
+                        else:
+                            error_message = "Fill both fields! Press TAB to shift focus."
+                    elif event.key == pygame.K_BACKSPACE:
+                        if active_field == "size":
+                            proc_size_input = proc_size_input[:-1]
+                        else:
+                            proc_burst_input = proc_burst_input[:-1]
+                    else:
+                        if event.unicode.isdigit():
+                            if active_field == "size":
+                                proc_size_input += event.unicode
+                            else:
+                                proc_burst_input += event.unicode
+
+                elif state == 2:  # Step 3: View & Clear Variables on Reset
+                    if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                        state = 0
+                        partitions_input = ""
+                        proc_size_input = ""
+                        proc_burst_input = ""
+                        jobs = []
+                        memory_size = None
+                        partition_busy = None
+                        error_message = ""
+
+        # Rendering base layer graphics
         if background:
             screen.blit(background, (0, 0))
-        else:
-            screen.fill(BLACK)
-
-        # 1. Top Left Header Panel
-        title_surface = font_title.render("MEMORY MANAGEMENT: Best-Available-Fit Algorithm", True, BLACK)
-        screen.blit(title_surface, (20, 10))
-
-        # 2. Setup Screen Interactions 
-       
-        # 3. Output
-           
-        # 4. Render the Interactive < BACK Button (Visible on ALL states/outputs)
-        if back_rect.collidepoint(mouse_pos):
-            pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
-            back_surface = font_setup.render("< BACK", True, BLACK)
-        else:
-            back_surface = font_setup.render("< BACK", True, NEON_GREEN)
-            
-        screen.blit(back_surface, back_rect.topleft)
-
-        pygame.display.flip()
-        clock.tick(30)
-
-if __name__ == "__main__":
-    main_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Memory Management Best-Avaialble Fit Algorithm")
-    baf_menu(main_screen)
