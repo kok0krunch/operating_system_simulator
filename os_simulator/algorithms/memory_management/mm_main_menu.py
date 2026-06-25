@@ -1,19 +1,10 @@
 import pygame
 import sys
 import os
-
-# Import algorithm paths
-try:
-    from .best_fit import bf_menu
-    from .best_available_fit import baf_menu
-    from .first_fit import ff_menu
-    from .worst_fit import wf_menu
-
-except ImportError:
-    from best_fit import bf_menu
-    from best_available_fit import baf_menu
-    from first_fit import ff_menu
-    from worst_fit import wf_menu
+from best_fit import bf_menu
+from best_available_fit import baf_menu
+from first_fit import ff_menu
+from worst_fit import wf_menu
 
 # Constants & Configurations
 NEON_GREEN = (57, 255, 20)
