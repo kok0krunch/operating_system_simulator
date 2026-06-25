@@ -2,12 +2,10 @@ import pygame
 import sys
 import os
 
-#font colors
 NEON_GREEN = (57, 255, 20)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 
-# Screen Size Dimensions
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
@@ -34,9 +32,9 @@ def baf_menu(screen):
     font_input = pygame.font.Font(font_path, 48) 
     font_table = pygame.font.Font(font_path, 32) 
 
-    #Variables
+    # Variables
     memory_size = None      
-    jobs = []               
+    jobs = []            
     partition_busy = None
     state = 0 
     partitions_input = ""
@@ -93,7 +91,7 @@ def baf_menu(screen):
                         if event.unicode.isdigit() or event.unicode == ',':
                             partitions_input += event.unicode
 
-                elif state == 1:  
+                elif state == 1:  # Step 2: Input Process Size & Allocate
                     if event.key == pygame.K_RETURN:
                         if proc_size_input.strip() != "":
                             try:
@@ -119,20 +117,21 @@ def baf_menu(screen):
                                     if memory_size[block_index] >= job_item["size"] and not partition_busy[block_index]:
                                         if optimal_index == -1 or memory_size[block_index] < memory_size[optimal_index]:
                                             optimal_index = block_index
-                                
+                                    
                                 # STEP 2: If no FREE partition fits, look for the SMALLEST busy one to SWAP OUT
                                 if optimal_index == -1:
                                     for block_index in range(partition_count):
                                         if memory_size[block_index] >= job_item["size"] and partition_busy[block_index]:
                                             if available_swap_index == -1 or memory_size[block_index] < memory_size[available_swap_index]:
                                                 available_swap_index = block_index
-                                
+                                    
                                 # STEP 3: Execute allocation or swap based on choices above
                                 if optimal_index != -1:
                                     # Found an open slot! Allocate cleanly.
                                     job_item["allocated_partition"] = optimal_index + 1
                                     job_item["fragmentation"] = memory_size[optimal_index] - job_item["size"]
                                     partition_busy[optimal_index] = True
+                                
                                 elif available_swap_index != -1:
                                     # Adjust and swap out the old job to make room in the best fitting slot.
                                     for old_job in jobs:
@@ -148,7 +147,6 @@ def baf_menu(screen):
                                     job_item["allocated_partition"] = "Too Large"
                                     
                                 jobs.append(job_item)
-                                # ---------------------------------------------------
                                 
                                 proc_size_input = ""
                                 error_message = ""
@@ -169,7 +167,7 @@ def baf_menu(screen):
             screen.fill(BLACK)
 
         # 1. Top Left Header Panel
-        title_surface = font_title.render("MEMORY MANAGEMENT: Best-Available-Fit Algorithm", True, BLACK)
+        title_surface = font_title.render("MEMORY MANAGEMENT: Best-Available-Fit Algorithm", True, BLACK if background else NEON_GREEN)
         screen.blit(title_surface, (20, 10))
 
         # 2. Rendering Content States
@@ -189,50 +187,85 @@ def baf_menu(screen):
             screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 95)))
             screen.blit(surf4, surf4.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 155)))
 
-
         elif state == 1:
-            # 1. Setup Text Prompts and Dynamic Size Inputs
+            # 1. Setup Text Prompts (Shifted higher to make room below)
             part_str = ",".join(map(str, memory_size))
-            txt1 = f"Add Incoming Tasks to Fixed Partitions Matrix [{part_str}]"
+            txt1 = f"Add Incoming Tasks to Fixed Partitions Matrix[{part_str}]"
             txt2 = f"Enter Process Size:  [{proc_size_input}]"
             txt3 = "Press [ENTER] to execute evaluation logic."
-
+            
             surf1 = font_input.render(txt1, True, NEON_GREEN)
             surf2 = font_input.render(txt2, True, NEON_GREEN)
             surf3 = font_table.render(txt3, True, NEON_GREEN)
 
-            # Center alignment calculations on your 1280x720 canvas
-            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 180)))
-            screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 80)))
-            screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20)))
+            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, 120)))
+            screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, 170)))
+            screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, 210)))
 
-            # 2. Render On-Screen Error Validation Flags (e.g., non-integers, empty values)
+            # 2. Render On-Screen Error Validation Flags
             if error_message:
                 err_surf = font_title.render(error_message, True, RED)
-                screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 90)))
+                screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, 210)))
 
-            # 3. Live Process Allocation Registry Table Layout
-            y_offset = 450
-            lbl_tbl = font_table.render("ID     Process Size    Assigned Block     Internal Fragmentation", True, NEON_GREEN)
-            screen.blit(lbl_tbl, (250, y_offset))
+            # --- DYNAMIC VERTICAL MEMORY MAP GRAPHICS ---
+            map_width = 300
+            map_height_per_block = 60
+            start_x = (SCREEN_WIDTH - map_width) // 2
+            start_y = 300
             
-            for job in jobs[-5:]:  # Safely loops over the last 5 submitted items to avoid screen spilling
-                y_offset += 32
-                
-                # Determine colors and dynamic textual flags based on assignment status
+            partition_count = len(memory_size)
+            
+            # Find which job is currently occupying which partition
+            block_occupants = [None] * partition_count
+            for job in jobs:
                 if isinstance(job["allocated_partition"], int):
-                    color = NEON_GREEN
-                    status_text = f"Partition {job['allocated_partition']}"
-                    frag_text = f"{job['fragmentation']} units"
-                else:
-                    color = RED
-                    status_text = str(job["allocated_partition"])
-                    frag_text = "N/A"
+                    idx = job["allocated_partition"] - 1
+                    if 0 <= idx < partition_count:
+                        block_occupants[idx] = job
+
+            # Render each partition block vertically
+            current_y = start_y
+            for i in range(partition_count):
+                block_rect = pygame.Rect(start_x, current_y, map_width, map_height_per_block)
+                occupant = block_occupants[i]
+                
+                if occupant:
+                    # Partition is occupied (Render with RED boundary and cross mark)
+                    pygame.draw.rect(screen, RED, block_rect, 2)
                     
-                # Format string padding cleanly using left-aligned syntax filters
-                row_txt = f"{job['process_id']:<4}   {job['size']:<12}   {status_text:<18}   {frag_text}"
-                lbl_row = font_table.render(row_txt, True, color)
-                screen.blit(lbl_row, (250, y_offset))
+                    info_text = f"{occupant['process_id']} ({occupant['size']} units)"
+                    info_surf = font_table.render(info_text, True, RED)
+                    screen.blit(info_surf, info_surf.get_rect(center=block_rect.center))
+                    
+                    # Draw visual X cross inside the block
+                    pygame.draw.line(screen, RED, (start_x, current_y), (start_x + map_width, current_y + map_height_per_block), 1)
+                    pygame.draw.line(screen, RED, (start_x, current_y + map_height_per_block), (start_x + map_width, current_y), 1)
+                else:
+                    # Partition is FREE (NEON_GREEN layout)
+                    pygame.draw.rect(screen, NEON_GREEN, block_rect, 2)
+                    info_surf = font_table.render("FREE", True, NEON_GREEN)
+                    screen.blit(info_surf, info_surf.get_rect(center=block_rect.center))
+                
+                # Partition ID label and capacity boundaries [Left side alignment]
+                label_text = f"Part {i+1} [{memory_size[i]}]"
+                label_surf = font_table.render(label_text, True, NEON_GREEN if not occupant else RED)
+                screen.blit(label_surf, (start_x - 160, current_y + (map_height_per_block // 2) - 12))
+                
+                # Fragmentation data metrics tracking [Right side alignment]
+                if occupant:
+                    frag_text = f"Frag: {occupant['fragmentation']}"
+                    frag_surf = font_table.render(frag_text, True, RED)
+                    screen.blit(frag_surf, (start_x + map_width + 20, current_y + (map_height_per_block // 2) - 12))
+                
+                current_y += map_height_per_block + 10  # Spacing layout gap
+
+            # Display Waiting Queue (Swapped Out) processes below the visual map blocks
+            swapped_jobs = [j for j in jobs if j["allocated_partition"] == "Swapped Out"]
+            if swapped_jobs:
+                queue_y = current_y + 15
+                queue_txt = "Waiting Queue (Swapped Out): " + ", ".join([f"{j['process_id']} ({j['size']})" for j in swapped_jobs])
+                queue_surf = font_table.render(queue_txt, True, RED)
+                screen.blit(queue_surf, queue_surf.get_rect(center=(SCREEN_WIDTH // 2, queue_y)))
 
         # 4. Render the Interactive < BACK Button
         if back_rect.collidepoint(mouse_pos):
@@ -240,6 +273,12 @@ def baf_menu(screen):
             back_surface = font_setup.render("< BACK", True, BLACK)
         else:
             back_surface = font_setup.render("< BACK", True, NEON_GREEN)
-            screen.blit(back_surface, back_rect.topleft)
-            pygame.display.flip()
-            clock.tick(30)
+        screen.blit(back_surface, back_rect.topleft)
+            
+        pygame.display.flip()
+        clock.tick(30)
+
+if __name__ == "__main__":
+    pygame.init()
+    test_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    baf_menu(test_screen)
