@@ -12,7 +12,7 @@ SCREEN_HEIGHT = 720
 def mft_menu(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Best-Fit Algorithm (MFT)")
+    pygame.display.set_caption("First-Fit Algorithm (MFT)")
     clock = pygame.time.Clock()
 
     try:
@@ -123,22 +123,24 @@ def mft_menu(screen):
                                 
                                 partition_count = len(memory_size)
                                 optimal_index = -1
-                                available_swap_index = -1  
-                                
-                                # Find smallest available partition that fits perfectly
+
+                                # Find first available partition that fits
                                 for block_index in range(partition_count):
                                     if memory_size[block_index] >= job_item["size"] and not partition_busy[block_index]:
-                                        if optimal_index == -1 or memory_size[block_index] < memory_size[optimal_index]:
-                                            optimal_index = block_index
+                                            if optimal_index == -1:
+                                                optimal_index = block_index
+
                                 
                                 if optimal_index != -1:
+                                    # Success! An available slot was found
                                     job_item["allocated_partition"] = optimal_index + 1
                                     job_item["fragmentation"] = memory_size[optimal_index] - job_item["size"]
                                     partition_busy[optimal_index] = True
+                                    last_changed_idx = optimal_index  # Sets row highlight color reference
                                 else:
-                                    # If busy, return error message
-                                    job_item["allocated_partition"] = "Out of Space"
-
+                                    # Failed: Remaining partitions are either full or too small
+                                    job_item["allocated_partition"] = "Too Large"
+                                    last_changed_idx = -1
                                     
                                 jobs.append(job_item)
                                 # ---------------------------------------------------
@@ -183,7 +185,7 @@ def mft_menu(screen):
             screen.fill(BLACK)
 
         # 1. Top Left Header Panel
-        title_surface = font_title.render("MEMORY MANAGEMENT: Best-Fit Algorithm (MFT)", True, BLACK if background else NEON_GREEN)
+        title_surface = font_title.render("MEMORY MANAGEMENT: First-Fit Algorithm (MFT)", True, BLACK if background else NEON_GREEN)
         screen.blit(title_surface, (20, 10))
 
         # 2. Rendering Content States
