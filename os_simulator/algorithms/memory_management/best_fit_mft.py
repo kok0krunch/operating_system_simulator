@@ -105,61 +105,57 @@ def mvt_menu(screen):
                         if event.unicode.isdigit() or event.unicode == ',':
                             partitions_input += event.unicode
 
-                elif state == 1:
-                    part_str = ",".join(map(str, memory_size))
-                    tbl_x, tbl_y = 50, 100
-                    lbl_tbl_hdr = font_table.render("ID     Process Size    Assigned Block     Internal Frag", True, NEON_GREEN)
-                    screen.blit(lbl_tbl_hdr, (tbl_x, tbl_y))
-                    pygame.draw.line(screen, NEON_GREEN, (tbl_x, tbl_y + 35), (tbl_x + 600, tbl_y + 35), 2)
-                    row_y = tbl_y + 45
+                elif state == 1:  
+                    if event.key == pygame.K_RETURN:
+                        if proc_size_input.strip() != "":
+                            try:
+                                s_val = int(proc_size_input.strip())
+                                if s_val <= 0:
+                                    raise ValueError
+                                
+                                # --- INLINE INTEGRATED BEST-AVAILABLE-FIT LOGIC ---
+                                process_number = len(jobs) + 1
+                                job_item = {
+                                    "process_id": f"P{process_number}",
+                                    "size": s_val,
+                                    "allocated_partition": None,
+                                    "fragmentation": 0
+                                }
+                                
+                                partition_count = len(memory_size)
+                                optimal_index = -1
+                                available_swap_index = -1  
+                                
+                                # Find smallest available partition that fits perfectly
+                                for block_index in range(partition_count):
+                                    if memory_size[block_index] >= job_item["size"] and not partition_busy[block_index]:
+                                        if optimal_index == -1 or memory_size[block_index] < memory_size[optimal_index]:
+                                            optimal_index = block_index
+                                
+                                if optimal_index != -1:
+                                    job_item["allocated_partition"] = optimal_index + 1
+                                    job_item["fragmentation"] = memory_size[optimal_index] - job_item["size"]
+                                    partition_busy[optimal_index] = True
+                                else:
+                                    # If busy, return error message
+                                    job_item["allocated_partition"] = "Out of Space"
 
-                    for job in jobs[-8:]:  # Shows up to 8 recent processes comfortably without crowding
-                        if isinstance(job["allocated_partition"], int):
-                            color = NEON_GREEN
-                            status_text = f"Partition {job['allocated_partition']}"
-                            frag_text = f"{job['fragmentation']} units"
+                                    
+                                jobs.append(job_item)
+                                # ---------------------------------------------------
+                                
+                                proc_size_input = ""
+                                error_message = ""
+                            except ValueError:
+                                error_message = "Values must be positive numbers greater than 0!"
                         else:
-                            color = RED
-                            status_text = str(job["allocated_partition"])
-                            frag_text = "N/A"
-                    
-                        row_txt = f"{job['process_id']:<4}   {job['size']:<12}   {status_text:<18}   {frag_text}"
-                        lbl_row = font_table.render(row_txt, True, color)
-                        screen.blit(lbl_row, (tbl_x, row_y))
-                        row_y += 32
-
-            
-                    mem_x, mem_y, mem_w, mem_h = 850, 100, 380, 400
-                    pygame.draw.rect(screen, (30, 30, 30), (mem_x, mem_y, mem_w, mem_h))
-                    pygame.draw.rect(screen, NEON_GREEN, (mem_x, mem_y, mem_w, mem_h), 3)
-                    total_partitions = len(memory_size)
-                    slice_h = mem_h // max(total_partitions, 1)
-
-                    for idx, p_size in enumerate(memory_size):
-                        curr_y = mem_y + (idx * slice_h)
-                        pygame.draw.rect(screen, NEON_GREEN, (mem_x, curr_y, mem_w, slice_h), 1)
-                
-                # Find if a process occupies this slot
-                occupying_job = None
-                for job in jobs:
-                    if job["allocated_partition"] == (idx + 1):
-                        occupying_job = job
-                        break
-
-                    if occupying_job:
-                        # Blue allocation block representing the active process size ratio
-                        fill_ratio = occupying_job["size"] / p_size
-                        fill_h = max(int(slice_h * fill_ratio), 18)                    
-                        pygame.draw.rect(screen, (70, 130, 180), (mem_x + 4, curr_y + 4, mem_w - 8, fill_h - 4))
-                        lbl_id = font_table.render(f"{occupying_job['process_id']} ({occupying_job['size']})", True, BLACK)
-                        screen.blit(lbl_id, (mem_x + 15, curr_y + 6))
-
-                        if slice_h - fill_h > 15:
-                            lbl_frag = font_table.render(f"Frag: {occupying_job['fragmentation']}", True, RED)
-                            screen.blit(lbl_frag, (mem_x + 15, curr_y + fill_h + 2))
+                            error_message = "Please enter a process size!"
+                    elif event.key == pygame.K_BACKSPACE:
+                        proc_size_input = proc_size_input[:-1]
                     else:
-                        lbl_empty = font_table.render(f"P{idx+1}: FREE ({p_size})", True, NEON_GREEN)
-                        screen.blit(lbl_empty, (mem_x + 15, curr_y + (slice_h // 2) - 12))
+                        if event.unicode.isdigit():
+                            proc_size_input += event.unicode
+
 
     
             pygame.draw.line(screen, NEON_GREEN, (50, 520), (SCREEN_WIDTH - 50, 520), 2)
@@ -283,11 +279,11 @@ def mvt_menu(screen):
                 
                 current_y += map_height_per_block + 10  # Spacing layout gap
 
-            # Display Waiting Queue (Swapped Out) processes below the visual map blocks
-            swapped_jobs = [j for j in jobs if j["allocated_partition"] == "Swapped Out"]
-            if swapped_jobs:
+            # Display Starvation processes below the visual map blocks
+            waiting_jobs = [j for j in jobs if j["allocated_partition"] == "Out of Space"]
+            if waiting_jobs:
                 queue_y = current_y + 15
-                queue_txt = "Waiting Queue (Swapped Out): " + ", ".join([f"{j['process_id']} ({j['size']})" for j in swapped_jobs])
+                queue_txt = "Waiting Queue: " + ", ".join([f"{j['process_id']} ({j['size']})" for j in waiting_jobs])
                 queue_surf = font_table.render(queue_txt, True, RED)
                 screen.blit(queue_surf, queue_surf.get_rect(center=(SCREEN_WIDTH // 2, queue_y)))
 
