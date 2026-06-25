@@ -93,7 +93,7 @@ def bf_menu(screen):
             screen.fill(BLACK)
 
         # 1. Main Title Header Render
-        title_surf = font_header.render("First-Fit Algorithm", True, NEON_GREEN)
+        title_surf = font_header.render("Best-Fit Algorithm", True, NEON_GREEN)
         title_rect = title_surf.get_rect(center=(SCREEN_WIDTH // 2, 150))
         screen.blit(title_surf, title_rect)
 

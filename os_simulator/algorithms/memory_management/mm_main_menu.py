@@ -13,7 +13,7 @@ BLACK = (0, 0, 0)
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
-def mm_main_menu():
+def mm_main_menu(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Memory Management Simulator")
@@ -129,4 +129,6 @@ def mm_main_menu():
         clock.tick(30)
 
 if __name__ == "__main__":
-    mm_main_menu
+    pygame.init()
+    test_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    mm_main_menu(test_screen)
