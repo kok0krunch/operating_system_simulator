@@ -112,6 +112,7 @@ def baf_menu(screen):
                                 
                                 partition_count = len(memory_size)
                                 optimal_index = -1
+                                available_swap_index = -1
                                 
                                 # Find smallest available partition that fits perfectly
                                 for block_index in range(partition_count):
@@ -184,26 +185,52 @@ def baf_menu(screen):
             screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 140)))
             screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 80)))
             screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 95)))
-            screen.blit(surf4, surf4.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 165)))
+            screen.blit(surf4, surf4.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 155)))
 
 
         elif state == 1:
+            # 1. Setup Text Prompts and Dynamic Size Inputs
             part_str = ",".join(map(str, memory_size))
             txt1 = f"Add Incoming Tasks to Fixed Partitions Matrix [{part_str}]"
-            txt2 = f"Enter Process Size:  {proc_size_input}"
+            txt2 = f"Enter Process Size:  [{proc_size_input}]"
             txt3 = "Press [ENTER] to execute evaluation logic."
 
             surf1 = font_input.render(txt1, True, NEON_GREEN)
             surf2 = font_input.render(txt2, True, NEON_GREEN)
             surf3 = font_table.render(txt3, True, NEON_GREEN)
 
-            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 140)))
-            screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40)))
-            screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 40)))
+            # Center alignment calculations on your 1280x720 canvas
+            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 180)))
+            screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 80)))
+            screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20)))
 
+            # 2. Render On-Screen Error Validation Flags (e.g., non-integers, empty values)
             if error_message:
                 err_surf = font_title.render(error_message, True, RED)
-                screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 120)))
+                screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 90)))
+
+            # 3. Live Process Allocation Registry Table Layout
+            y_offset = 450
+            lbl_tbl = font_table.render("ID     Process Size    Assigned Block     Internal Fragmentation", True, NEON_GREEN)
+            screen.blit(lbl_tbl, (250, y_offset))
+            
+            for job in jobs[-5:]:  # Safely loops over the last 5 submitted items to avoid screen spilling
+                y_offset += 32
+                
+                # Determine colors and dynamic textual flags based on assignment status
+                if isinstance(job["allocated_partition"], int):
+                    color = NEON_GREEN
+                    status_text = f"Partition {job['allocated_partition']}"
+                    frag_text = f"{job['fragmentation']} units"
+                else:
+                    color = RED
+                    status_text = str(job["allocated_partition"])
+                    frag_text = "N/A"
+                    
+                # Format string padding cleanly using left-aligned syntax filters
+                row_txt = f"{job['process_id']:<4}   {job['size']:<12}   {status_text:<18}   {frag_text}"
+                lbl_row = font_table.render(row_txt, True, color)
+                screen.blit(lbl_row, (250, y_offset))
 
         # 4. Render the Interactive < BACK Button
         if back_rect.collidepoint(mouse_pos):
