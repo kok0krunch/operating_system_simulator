@@ -1,3 +1,14 @@
+import pygame
+import sys
+import os
+
+NEON_GREEN = (57, 255, 20)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
+
 def mvt_menu(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -74,3 +85,8 @@ def mvt_menu(screen):
 
         pygame.display.flip()
         clock.tick(30)
+
+if __name__ == "__main__":
+    pygame.init()
+    test_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    mvt_menu(test_screen)
