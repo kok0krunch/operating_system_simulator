@@ -27,7 +27,7 @@ class FCFSDiskScheduling:
 #Draw arrow
 def draw_arrow(surface, color, start, end):
 
-    pygame.draw.line(surface, color, start, end, 3)
+    pygame.draw.line(surface, color, start, end, 1)
 
     dx = end[0] - start[0]
     dy = end[1] - start[1]
