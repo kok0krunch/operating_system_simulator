@@ -31,7 +31,7 @@ def show_devs(screen):
         pygame.quit()
         sys.exit()
 
-    font_header = pygame.font.Font(font_path, 100)
+    font_header = pygame.font.Font(font_path, 110)
     font_name = pygame.font.Font(font_path, 35)
     font_role = pygame.font.Font(font_path, 28)
     font_footer = pygame.font.Font(font_path, 32)
@@ -39,7 +39,7 @@ def show_devs(screen):
 
     # Developer Bio Matrix Map
     dev_team = [
-        {"name": "[1] Marwilson A. Dela Cruz", "role": "CPU Scheduling Simulator Developer", "col": 0, "row": 0},
+        {"name": "[1] Marwilson T. Dela Cruz", "role": "CPU Scheduling Simulator Developer", "col": 0, "row": 0},
         {"name": "[2] Althea Mariell C. De Lara", "role": "Memory Management Simulator Developer", "col": 0, "row": 1},
         {"name": "[3] Amalia S. Kadoi", "role": "Virtual Memory Simulator Developer", "col": 1, "row": 0},
         {"name": "[4] Shella Mae M. Talamor", "role": "Disk Scheduling Simulator Developer", "col": 1, "row": 1}
