@@ -102,6 +102,8 @@ SCREEN_HEIGHT = 720
 
 def baf_menu(screen):
     pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Best-Available-Fit Algorithm")
     clock = pygame.time.Clock()
 
     # Load resources with fallbacks

@@ -89,7 +89,7 @@ def mm_main_menu():
                             # Pass the screen variable into your standalone module loops
                             func(screen)
                             # Restore window caption limits after returning from sub-modules
-                            pygame.display.set_caption("Virtual Memory Page Replacement Simulator")
+                            pygame.display.set_caption("Memory Management Simulator")
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:

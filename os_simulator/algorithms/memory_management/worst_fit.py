@@ -13,6 +13,8 @@ SCREEN_HEIGHT = 720
 
 def wf_menu(screen):
     pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Worst-Fit Algorithm")
     clock = pygame.time.Clock()
 
     # Load background
@@ -44,6 +46,7 @@ def wf_menu(screen):
 
     def run_worst_fit():
         pass
+
 
     # Main UI loop
     running = True

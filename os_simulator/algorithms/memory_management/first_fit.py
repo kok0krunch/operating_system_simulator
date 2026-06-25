@@ -14,6 +14,8 @@ SCREEN_HEIGHT = 720
 
 def mvt_menu(screen):
     pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("First-Fit Algorithm (MVT)")
     clock = pygame.time.Clock()
 
     # Load resources with fallbacks
@@ -89,6 +91,8 @@ def mvt_menu(screen):
 
 def mft_menu(screen):
     pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("First-Fit Algorithm (MFT)")
     clock = pygame.time.Clock()
 
     # Load resources with fallbacks
@@ -168,7 +172,7 @@ def mft_menu(screen):
 def ff_menu(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("MEMORY TYPE")
+    pygame.display.set_caption("First-Fit Algorithm")
     clock = pygame.time.Clock()
 
     # Load Background Canvas
@@ -230,7 +234,7 @@ def ff_menu(screen):
                             # Pass the screen variable into your standalone module loops
                             func(screen)
                             # Restore window caption limits after returning from sub-modules
-                            pygame.display.set_caption("Virtual Memory Page Replacement Simulator")
+                            pygame.display.set_caption("First-Fit Algorithm")
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
