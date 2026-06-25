@@ -44,7 +44,7 @@ def draw_arrow(surface, color, start, end):
 
     pygame.draw.line(surface,color,end,(end[0] + right.x, end[1] + right.y),3)
 
-
+    
 
 #Main Program
 def main():
