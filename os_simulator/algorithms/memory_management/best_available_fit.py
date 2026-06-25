@@ -93,7 +93,7 @@ def baf_menu(screen):
                         if event.unicode.isdigit() or event.unicode == ',':
                             partitions_input += event.unicode
 
-                elif state == 1:  # Step 2: Add Multiple Processes (Size Only)
+                elif state == 1:  
                     if event.key == pygame.K_RETURN:
                         if proc_size_input.strip() != "":
                             try:
@@ -101,7 +101,7 @@ def baf_menu(screen):
                                 if s_val <= 0:
                                     raise ValueError
                                 
-                                # --- INLINE INTEGRATED BEST-AVAILABLE-FIT LOGIC ---
+                                # --- FIXED INTEGRATED BEST-AVAILABLE-FIT LOGIC ---
                                 process_number = len(jobs) + 1
                                 job_item = {
                                     "process_id": f"P{process_number}",
@@ -112,28 +112,29 @@ def baf_menu(screen):
                                 
                                 partition_count = len(memory_size)
                                 optimal_index = -1
-                                available_swap_index = -1
+                                available_swap_index = -1  
                                 
-                                # Find smallest available partition that fits perfectly
+                                # STEP 1: Scan for the absolute SMALLEST partition that is FREE and fits
                                 for block_index in range(partition_count):
                                     if memory_size[block_index] >= job_item["size"] and not partition_busy[block_index]:
                                         if optimal_index == -1 or memory_size[block_index] < memory_size[optimal_index]:
                                             optimal_index = block_index
                                 
+                                # STEP 2: If no FREE partition fits, look for the SMALLEST busy one to SWAP OUT
+                                if optimal_index == -1:
+                                    for block_index in range(partition_count):
+                                        if memory_size[block_index] >= job_item["size"] and partition_busy[block_index]:
+                                            if available_swap_index == -1 or memory_size[block_index] < memory_size[available_swap_index]:
+                                                available_swap_index = block_index
+                                
+                                # STEP 3: Execute allocation or swap based on choices above
                                 if optimal_index != -1:
+                                    # Found an open slot! Allocate cleanly.
                                     job_item["allocated_partition"] = optimal_index + 1
                                     job_item["fragmentation"] = memory_size[optimal_index] - job_item["size"]
                                     partition_busy[optimal_index] = True
-                                else:
-                                    # If busy, look for best partition to suspend / swap out
-                                    available_swap_index = -1
-                                    for block_index in range(partition_count):
-                                        if memory_size[block_index] >= job_item["size"]:
-                                            if available_swap_index == -1 or memory_size[block_index] < memory_size[available_swap_index]:
-                                                available_swap_index = block_index
-                                    
-                                if available_swap_index != -1:
-                                    # Evict process currently occupying this specific partition index
+                                elif available_swap_index != -1:
+                                    # Adjust and swap out the old job to make room in the best fitting slot.
                                     for old_job in jobs:
                                         if old_job["allocated_partition"] == available_swap_index + 1:
                                             old_job["allocated_partition"] = "Swapped Out"
@@ -142,7 +143,8 @@ def baf_menu(screen):
                                     job_item["allocated_partition"] = available_swap_index + 1
                                     job_item["fragmentation"] = memory_size[available_swap_index] - job_item["size"]
                                     partition_busy[available_swap_index] = True
-                                else:
+                                else: 
+                                    # Process is completely too massive for any partition shape in the system
                                     job_item["allocated_partition"] = "Too Large"
                                     
                                 jobs.append(job_item)
