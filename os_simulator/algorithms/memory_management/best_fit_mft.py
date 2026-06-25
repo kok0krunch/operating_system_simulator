@@ -10,7 +10,7 @@ RED = (255, 0, 0)
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
-def baf_menu(screen):
+def mvt_menu(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Best-Fit Algorithm")
@@ -41,6 +41,7 @@ def baf_menu(screen):
     partitions_input = ""
     proc_size_input = ""
     error_message = ""
+    part_str = ""
 
     # Main UI loop
     running = True
@@ -304,4 +305,4 @@ def baf_menu(screen):
 if __name__ == "__main__":
     pygame.init()
     test_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    baf_menu(test_screen)
+    mvt_menu(test_screen)
