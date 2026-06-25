@@ -147,27 +147,26 @@ def main():
         if len(sequence) == 0:
             return
 
-        start_x = 100
-        end_x = 1050
+        graph_width = 1000
+        start_x = (WIDTH - graph_width) // 2
+        end_x = start_x + graph_width    
+        axis_y = 120
 
         axis_y = 120
 
-        pygame.draw.line(screen,NEON_GREEN,(start_x, axis_y),(end_x, axis_y),3)
+        pygame.draw.line(screen, NEON_GREEN, (start_x, axis_y), (end_x, axis_y), 3)
 
-        max_value = max(sequence)
+        max_value = max(sequence) if max(sequence) > 0 else 1
 
         # Draw cylinder markers
         for value in sequence:
-
             x = start_x + (value / max_value) * (end_x - start_x)
+            pygame.draw.line(screen, NEON_GREEN, (x, 105), (x, 135), 4) 
 
-            pygame.draw.line(screen,NEON_GREEN,(x, 90),(x, 150),4)
+            label = font_small.render(str(value), True, NEON_GREEN)
+            screen.blit(label, label.get_rect(center=(x, 70)))
 
-            label = font_small.render(str(value),True, NEON_GREEN)
-
-            screen.blit(label,(x - 10, 55))
-
-        # Draw head movement
+        # Draw head movement 
         base_y = 200
         step_y = 40
 
@@ -176,9 +175,7 @@ def main():
             current = sequence[i]
             nxt = sequence[i + 1]
 
-            x1 = start_x + (
-                current / max_value) * (end_x - start_x)
-
+            x1 = start_x + (current / max_value) * (end_x - start_x)
             x2 = start_x + (nxt / max_value) * (end_x - start_x)
 
             y1 = base_y + i * step_y
@@ -198,9 +195,11 @@ def main():
 
         draw_graph()
 
-        total = font_large.render(f"Total Head Movement: {total_head_movement}",True,NEON_GREEN)
+        total = font_large.render(f"Total Head Movement: {total_head_movement}", True, NEON_GREEN)
+        screen.blit(total, total.get_rect(center=(WIDTH // 2, 630)))
 
-        screen.blit(total, (40, 650))
+        prompt = font_title.render("Press [SPACE] or [ENTER] to start a new calculation", True, NEON_GREEN)
+        screen.blit(prompt, prompt.get_rect(center=(WIDTH // 2, 675)))
 
     #Game loop
     running = True
