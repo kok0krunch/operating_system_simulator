@@ -110,7 +110,7 @@ def main():
                                     print("CPU Scheduling chosen (Developer Incomplete)")
                                     
                                 elif action == "MM":
-                                    mm_main_menu()
+                                    mm_main_menu(screen)
                                     pygame.display.set_caption("Operating System Simulator")
                                     
                                 elif action == "VM":
