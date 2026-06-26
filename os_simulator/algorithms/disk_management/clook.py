@@ -260,11 +260,16 @@ def clook_menu(screen):
 
     def draw_result_screen():
         screen.blit(background, (0, 0))
-        title = font_title.render("DISK SCHEDULING: C-LOOK", True, BLACK)
+        title = font_title.render("DISK SCHEDULING: First-Come, First-Serve", True, BLACK)
         screen.blit(title, (20, 10))
+
         draw_graph()
+
         total = font_large.render(f"Total Head Movement: {total_head_movement}", True, NEON_GREEN)
-        screen.blit(total, (40, 650))
+        screen.blit(total, total.get_rect(center=(WIDTH // 2, 630)))
+
+        prompt = font_title.render("Press [ESCAPE] to start a new calculation", True, NEON_GREEN)
+        screen.blit(prompt, prompt.get_rect(center=(WIDTH // 2, 675)))
 
     running = True
 
