@@ -23,8 +23,9 @@ def baf_menu(screen):
         background = None
 
     font_path = "os_simulator\\components\\VT323-Regular.ttf"
-    if not os.path.exists(font_path):
-        # Fallback to system monospace if template asset directory isn't present locally
+    font_exists = os.path.exists(font_path)
+
+    if not font_exists:
         font_title = pygame.font.SysFont("monospace", 36)
         font_setup = pygame.font.SysFont("monospace", 46)
         font_input = pygame.font.SysFont("monospace", 48)
@@ -37,7 +38,6 @@ def baf_menu(screen):
 
     # --- MVT State Variables ---
     total_memory_size = 0
-    # memory_map holds dynamic blocks: [{'start': 0, 'size': X, 'status': 'FREE' or 'P1'}]
     memory_map = []
     
     state = 0 
@@ -71,7 +71,7 @@ def baf_menu(screen):
                     running = False
                     return
 
-                # STEP 1: Input Total Memory Capacity for MVT pool
+                # STEP 1: Input Total Memory Capacity
                 if state == 0:  
                     if event.key == pygame.K_RETURN:
                         raw = total_mem_input.strip()
@@ -83,7 +83,6 @@ def baf_menu(screen):
                                     raise ValueError
                                 
                                 total_memory_size = val
-                                # Initialize total memory pool as one single free segment
                                 memory_map = [{'start': 0, 'size': total_memory_size, 'status': 'FREE'}]
                                 state = 1
                                 error_message = ""
@@ -99,7 +98,7 @@ def baf_menu(screen):
                         if event.unicode.isdigit():
                             total_mem_input += event.unicode
 
-                # STEP 2: Input Process Size, Allocate via Best-Fit or Trigger Compaction
+                # STEP 2: Input Process Size & Allocation
                 elif state == 1:  
                     if event.key == pygame.K_RETURN:
                         raw_size = proc_size_input.strip()
@@ -112,25 +111,21 @@ def baf_menu(screen):
                                 p_name = f"P{process_counter}"
                                 allocated = False
                                 
-                                # loop to handle potential retry after compaction
                                 while True:
                                     best_idx = -1
                                     smallest_fit = float('inf')
 
-                                    # Scan for Best-Fit block
                                     for i, block in enumerate(memory_map):
                                         if block['status'] == 'FREE' and block['size'] >= requested_size:
                                             if block['size'] < smallest_fit:
                                                 smallest_fit = block['size']
                                                 best_idx = i
 
-                                    # Allocate if found
                                     if best_idx != -1:
                                         target = memory_map[best_idx]
                                         if target['size'] == requested_size:
                                             target['status'] = p_name
                                         else:
-                                            # Dynamically slice the variable partition
                                             new_block = {'start': target['start'], 'size': requested_size, 'status': p_name}
                                             target['start'] += requested_size
                                             target['size'] -= requested_size
@@ -142,10 +137,9 @@ def baf_menu(screen):
                                         error_message = ""
                                         break
                                     
-                                    # If Best-Fit fails, calculate total combined free space remaining
+                                    # Compaction Logic
                                     total_free = sum(b['size'] for b in memory_map if b['status'] == 'FREE')
                                     if total_free >= requested_size:
-                                        # Compaction Logic: Shift all allocated segments contiguously up to the top
                                         log_message = "No single block fits. Compacting memory segments..."
                                         allocated_blocks = [b for b in memory_map if b['status'] != 'FREE']
                                         
@@ -160,7 +154,6 @@ def baf_menu(screen):
                                             new_map.append({'start': current_addr, 'size': total_free, 'status': 'FREE'})
                                             
                                         memory_map = new_map
-                                        # Loop executes again to drop the process into the freshly compacted bottom block
                                         continue 
                                     else:
                                         error_message = f"Out of memory! {p_name} is too large."
@@ -173,9 +166,7 @@ def baf_menu(screen):
                         else:
                             error_message = "Please enter a process size!"
                     
-                    # Manual Deallocation hotkey for simulation versatility
                     elif event.key == pygame.K_d:
-                        # Deallocates the earliest active process found to simulate fragmented space holes
                         for block in memory_map:
                             if block['status'] != 'FREE':
                                 target_p = block['status']
@@ -183,7 +174,6 @@ def baf_menu(screen):
                                 log_message = f"Deallocated {target_p} manually."
                                 break
                         
-                        # Dynamic MVT merging: combine adjacent free blocks immediately
                         i = 0
                         while i < len(memory_map) - 1:
                             if memory_map[i]['status'] == 'FREE' and memory_map[i+1]['status'] == 'FREE':
@@ -198,27 +188,24 @@ def baf_menu(screen):
                         if event.unicode.isdigit():
                             proc_size_input += event.unicode
 
-        # Rendering Background Graphics
         if background:
             screen.blit(background, (0, 0))
         else:
             screen.fill(BLACK)
 
-        # Header Title
-        title_surface = font_title.render("MEMORY MANAGEMENT: Best-Fit MVT (Variable Partitions)", True, BLACK if background else NEON_GREEN)
+        title_surface = font_title.render("MEMORY MANAGEMENT: Best-Fit MVT (With Compaction)", True, BLACK if background else NEON_GREEN)
         screen.blit(title_surface, (20, 10))
 
-        # Render Content States
         if state == 0:
             txt1 = "Initialize Variable Partition Total Memory Capacity"
-            txt2 = "Enter total system memory units available"
+            txt2 = "Enter total memory size"
             txt3 = "(e.g., 500 or 1000):"
             txt4 = f"[{total_mem_input}]"
 
             surf1 = font_input.render(txt1, True, NEON_GREEN)
             surf2 = font_input.render(txt2, True, NEON_GREEN)
             surf3 = font_input.render(txt3, True, NEON_GREEN)
-            surf4 = font_input.render(txt4, True, WHITE)
+            surf4 = font_input.render(txt4, True, NEON_GREEN) # Set text input color to NEON_GREEN
 
             screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 120)))
             screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 60)))
@@ -235,7 +222,7 @@ def baf_menu(screen):
             txt3 = "Press [ENTER] to Allocate | Press [D] to Deallocate Oldest Process"
             
             surf1 = font_input.render(txt1, True, NEON_GREEN)
-            surf2 = font_input.render(txt2, True, WHITE)
+            surf2 = font_input.render(txt2, True, NEON_GREEN) # Set process input color to NEON_GREEN
             surf3 = font_table.render(txt3, True, NEON_GREEN)
             log_surf = font_table.render(f"System Log: {log_message}", True, NEON_GREEN)
 
@@ -248,48 +235,51 @@ def baf_menu(screen):
                 err_surf = font_title.render(error_message, True, RED)
                 screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, 245)))
 
-            # --- DYNAMIC SCALE RENDERING OF VARIABLE MEMORY MAP ---
+            # --- DYNAMIC MEMORY RENDERING ---
             map_width = 400
             total_render_height = 320
             start_x = (SCREEN_WIDTH - map_width) // 2
             start_y = 280
             
             for block in memory_map:
-                # Proportional scaling calculations for clean variable box rendering
                 pixel_y = start_y + int((block['start'] / total_memory_size) * total_render_height)
                 pixel_h = int((block['size'] / total_memory_size) * total_render_height)
                 
-                # Minimum height safety check so thin partitions remain readable
-                if pixel_h < 25: 
-                    pixel_h = 25
+                if pixel_h < 12: 
+                    pixel_h = 12
                     
                 block_rect = pygame.Rect(start_x, pixel_y, map_width, pixel_h)
                 
+                # Dynamic text scaling inside small memory partitions
+                dynamic_size = max(10, min(32, int(pixel_h * 0.6)))
+                
+                if font_exists:
+                    block_font = pygame.font.Font(font_path, dynamic_size)
+                else:
+                    block_font = pygame.font.SysFont("monospace", dynamic_size)
+                
                 if block['status'] != 'FREE':
-                    # Active process styling (RED box with cross lines matching template styling)
                     pygame.draw.rect(screen, RED, block_rect, 2)
                     pygame.draw.line(screen, RED, (start_x, pixel_y), (start_x + map_width, pixel_y + pixel_h), 1)
                     pygame.draw.line(screen, RED, (start_x, pixel_y + pixel_h), (start_x + map_width, pixel_y), 1)
                     
                     info_text = f"{block['status']} ({block['size']} units)"
-                    info_surf = font_table.render(info_text, True, RED)
+                    info_surf = block_font.render(info_text, True, RED)
                     screen.blit(info_surf, info_surf.get_rect(center=block_rect.center))
                     
-                    # MVT tracking variables on right side margins
                     loc_text = f"Range: {block['start']}-{block['start']+block['size']}"
                     loc_surf = font_table.render(loc_text, True, RED)
                     screen.blit(loc_surf, (start_x + map_width + 15, pixel_y + (pixel_h // 2) - 12))
                 else:
-                    # Available Segment Hole styling (NEON_GREEN layout boundaries)
                     pygame.draw.rect(screen, NEON_GREEN, block_rect, 2)
-                    info_surf = font_table.render(f"FREE HOLE ({block['size']} units)", True, NEON_GREEN)
+                    info_text = f"FREE HOLE ({block['size']} units)"
+                    info_surf = block_font.render(info_text, True, NEON_GREEN)
                     screen.blit(info_surf, info_surf.get_rect(center=block_rect.center))
                     
                     loc_text = f"Start Addr: {block['start']}"
                     loc_surf = font_table.render(loc_text, True, NEON_GREEN)
                     screen.blit(loc_surf, (start_x - 220, pixel_y + (pixel_h // 2) - 12))
 
-        # Navigation Controls Panel Rendering
         if back_rect.collidepoint(mouse_pos):
             pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
             back_surface = font_setup.render("< BACK", True, BLACK)
