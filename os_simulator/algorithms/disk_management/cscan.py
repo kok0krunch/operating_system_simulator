@@ -172,7 +172,7 @@ def cscan_menu(screen):
         label = font_large.render("Input disk requests (comma separated):", True, NEON_GREEN)
         screen.blit(label, label.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 40)))
         
-        display_text = f"[{request_text}]" if request_text else "[]"
+        display_text = f"{request_text}"
         value = font_large.render(display_text, True, NEON_GREEN)
         screen.blit(value, value.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 40)))
         draw_interactive_back(mouse_pos)
@@ -274,7 +274,7 @@ def cscan_menu(screen):
         total = font_large.render(f"Total Head Movement: {total_head_movement}", True, NEON_GREEN)
         screen.blit(total, total.get_rect(center=(WIDTH // 2, 630)))
 
-        prompt = font_title.render("Press [SPACE] or [ENTER] to start a new calculation", True, NEON_GREEN)
+        prompt = font_title.render("Press [ESCAPE] to start a new calculation", True, NEON_GREEN)
         screen.blit(prompt, prompt.get_rect(center=(WIDTH // 2, 675)))
 
     running = True
@@ -352,7 +352,7 @@ def cscan_menu(screen):
                         direction_text += event.unicode
 
                 elif current_screen == RESULT_SCREEN:
-                    if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                    if event.key == pygame.K_ESCAPE:
                         head_text = ""
                         request_text = ""
                         disk_size_text = ""
@@ -360,7 +360,6 @@ def cscan_menu(screen):
                         sequence = []
                         total_head_movement = 0
                         current_screen = HEAD_INPUT
-
         # Scene Dispatchers
         if current_screen == HEAD_INPUT:
             draw_head_screen(mouse_pos)
