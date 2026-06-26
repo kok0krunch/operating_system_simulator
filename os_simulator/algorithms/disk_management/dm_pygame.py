@@ -6,15 +6,15 @@ import os
 # Import algorithm paths
 # Ipinapalagay nito na ang iyong mga file ay pinangalanang fcfs, sstf, scan, cscan, look, at clook
 try:
-    #from .fcfs_disk import fcfs_menu
-    #from .sstf import sstf_menu
+    from .fcfs_disk import fcfs_menu
+    from .sstf import sstf_menu
     #from .scan import scan_menu
     from .cscan import cscan_menu
     #from .look import look_menu
     from .clook import clook_menu
 except ImportError:
     from fcfs_disk import fcfs_menu
-    #from sstf import sstf_menu
+    from sstf import sstf_menu
     #from scan import scan_menu
     from cscan import cscan_menu
     #from look import look_menu
@@ -54,7 +54,7 @@ def main_disk_menu():
     # Menu Options Mapping para sa Disk Scheduling
     menu_options = [
         ("[1] First-Come, First-Served (FCFS)", fcfs_menu),
-        #("[2] Shortest Seek Time First (SSTF)", sstf_menu),
+        ("[2] Shortest Seek Time First (SSTF)", sstf_menu),
         #("[3] SCAN Scheduling (Elevator)", scan_menu),
         ("[4] Circular SCAN Scheduling (C-SCAN)", cscan_menu),
         #("[5] LOOK Scheduling Algorithm", look_menu),
