@@ -1,1 +1,0 @@
-# Compilation of all algorithms to manage the processes in the OS Simulator
