@@ -4,20 +4,14 @@ import pygame
 import sys
 import os
 
-# Constants & Configurations
 NEON_GREEN = (57, 255, 20)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 WHITE = (255, 255, 255)
 DARK_GRAY = (40, 40, 40)
 
-# Screen Size Dimensions
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
-
-# -----------------------------------------------------------------------------
-# CORE SIMULATION CLASSES & LOGIC
-# -----------------------------------------------------------------------------
 
 class Process:
     def __init__(self, pid, arrival_time, burst_time):
@@ -84,10 +78,6 @@ def run_round_robin(process_list, time_quantum):
             completed.append(curr)
             
     return completed, gantt_log
-
-# -----------------------------------------------------------------------------
-# PYGAME INTERACTION INTERFACES
-# -----------------------------------------------------------------------------
 
 def rr_menu(screen):
     pygame.init()
@@ -283,10 +273,7 @@ def rr_menu(screen):
                         completed_jobs = []
                         gantt_timeline = []
 
-        # -----------------------------------------------------------------------------
-        # STATE RENDERING ENGINE
-        # -----------------------------------------------------------------------------
-        
+        # State Rendering Engine
         if state == 0:
             txt1 = "Initialize the CPU Scheduling Workspace Parameters"
             txt2 = "Enter the number of active processes to evaluate (Max 6):"
@@ -353,7 +340,7 @@ def rr_menu(screen):
                 err_surf = font_table.render(error_message, True, RED)
                 screen.blit(err_surf, (50, 225))
                 
-            # Dynamic Data Grid Layout Configuration (Removed Priority Columns)
+            # Dynamic Data Grid Layout Configuration
             start_x, start_y = 240, 320
             col_widths = [240, 280, 280]
             row_height = 40
