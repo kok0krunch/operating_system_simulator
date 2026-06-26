@@ -1,8 +1,8 @@
 import pygame
 import sys
 import os
-from worst_fit_compaction import wf_compaction_logic
-from worst_fit_no_compaction import wf_no_compaction_logic
+from .worst_fit_compaction import wf_compaction_logic
+from .worst_fit_no_compaction import wf_no_compaction_logic
 
 # Constants & Configurations
 NEON_GREEN = (57, 255, 20)

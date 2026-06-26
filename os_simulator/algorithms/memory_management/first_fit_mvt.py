@@ -1,8 +1,8 @@
 import pygame
 import sys
 import os
-from first_fit_mvt_compaction import ff_compaction_logic
-from first_fit_mvt_no_compaction import ff_no_compaction_logic
+from .first_fit_mvt_compaction import ff_compaction_logic
+from .first_fit_mvt_no_compaction import ff_no_compaction_logic
 
 # Constants & Configurations
 NEON_GREEN = (57, 255, 20)
