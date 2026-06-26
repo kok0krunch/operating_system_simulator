@@ -13,7 +13,7 @@ SCREEN_HEIGHT = 720
 def ff_no_compaction_logic(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("First-Fit MVT Algorithm (No Compaction)")
+    pygame.display.set_caption("First Fit (MVT - Without Compaction)")
     clock = pygame.time.Clock()
 
     try:
@@ -148,7 +148,7 @@ def ff_no_compaction_logic(screen):
         if background: screen.blit(background, (0, 0))
         else: screen.fill(BLACK)
 
-        title_surface = font_title.render("MEMORY MANAGEMENT: First-Fit MVT (No Compaction)", True, BLACK if background else NEON_GREEN)
+        title_surface = font_title.render("MEMORY MANAGEMENT: First Fit (MVT - Without Compaction)", True, BLACK if background else NEON_GREEN)
         screen.blit(title_surface, (20, 10))
 
         if state == 0:

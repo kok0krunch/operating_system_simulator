@@ -16,7 +16,7 @@ SCREEN_HEIGHT = 720
 def wf_menu(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Worst-Fit Algorithm (MVT)")
+    pygame.display.set_caption("Worst Fit Simulator")
     clock = pygame.time.Clock()
 
     # Load Background Canvas
@@ -78,7 +78,7 @@ def wf_menu(screen):
                             # Pass the screen variable into your standalone module loops
                             func(screen)
                             # Restore window caption limits after returning from sub-modules
-                            pygame.display.set_caption("Worst-Fit Algorithm")
+                            pygame.display.set_caption("Worst Fit Simulator")
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -92,7 +92,7 @@ def wf_menu(screen):
             screen.fill(BLACK)
 
         # 1. Main Title Header Render
-        title_surf = font_header.render("Worst-Fit Algorithm (MVT)", True, NEON_GREEN)
+        title_surf = font_header.render("WORST FIT", True, NEON_GREEN)
         title_rect = title_surf.get_rect(center=(SCREEN_WIDTH // 2, 150))
         screen.blit(title_surf, title_rect)
 

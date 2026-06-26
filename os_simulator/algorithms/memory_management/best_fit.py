@@ -17,7 +17,7 @@ SCREEN_HEIGHT = 720
 def bf_menu(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Best-Fit Algorithm")
+    pygame.display.set_caption("Best Fit Simulator")
     clock = pygame.time.Clock()
 
     # Load Background Canvas
@@ -79,7 +79,7 @@ def bf_menu(screen):
                             # Pass the screen variable into your standalone module loops
                             func(screen)
                             # Restore window caption limits after returning from sub-modules
-                            pygame.display.set_caption("Best-Fit Simulator")
+                            pygame.display.set_caption("Best Fit Simulator")
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -93,7 +93,7 @@ def bf_menu(screen):
             screen.fill(BLACK)
 
         # 1. Main Title Header Render
-        title_surf = font_header.render("Best-Fit Algorithm", True, NEON_GREEN)
+        title_surf = font_header.render("BEST FIT", True, NEON_GREEN)
         title_rect = title_surf.get_rect(center=(SCREEN_WIDTH // 2, 150))
         screen.blit(title_surf, title_rect)
 

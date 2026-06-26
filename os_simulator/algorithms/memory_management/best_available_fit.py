@@ -12,7 +12,7 @@ SCREEN_HEIGHT = 720
 def baf_menu(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Best-Available-Fit Algorithm")
+    pygame.display.set_caption("Best Available Fit Simulator")
     clock = pygame.time.Clock()
 
     try:
@@ -179,7 +179,7 @@ def baf_menu(screen):
             screen.fill(BLACK)
 
         # 1. Top Left Header Panel
-        title_surface = font_title.render("MEMORY MANAGEMENT: Best-Available-Fit Algorithm", True, BLACK if background else NEON_GREEN)
+        title_surface = font_title.render("MEMORY MANAGEMENT: Best Available Fit", True, BLACK if background else NEON_GREEN)
         screen.blit(title_surface, (20, 10))
 
         # 2. Rendering Content States

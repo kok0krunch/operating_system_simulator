@@ -12,7 +12,7 @@ SCREEN_HEIGHT = 720
 def bf_no_compaction_logic(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Best-Fit MVT Algorithm (No Compaction)")
+    pygame.display.set_caption("Best Fit Simulator (MVT - Without Compaction)")
     clock = pygame.time.Clock()
 
     try:
@@ -171,7 +171,7 @@ def bf_no_compaction_logic(screen):
         else:
             screen.fill(BLACK)
 
-        title_surface = font_title.render("MEMORY MANAGEMENT: Best-Fit MVT (No Compaction)", True, BLACK if background else NEON_GREEN)
+        title_surface = font_title.render("MEMORY MANAGEMENT: Best Fit (MVT - Without Compaction)", True, BLACK if background else NEON_GREEN)
         screen.blit(title_surface, (20, 10))
 
         if state == 0:

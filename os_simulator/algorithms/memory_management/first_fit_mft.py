@@ -12,7 +12,7 @@ SCREEN_HEIGHT = 720
 def mft_menu(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("First-Fit Algorithm (MFT)")
+    pygame.display.set_caption("First Fit Simulator (MFT)")
     clock = pygame.time.Clock()
 
     try:
@@ -185,7 +185,7 @@ def mft_menu(screen):
             screen.fill(BLACK)
 
         # 1. Top Left Header Panel
-        title_surface = font_title.render("MEMORY MANAGEMENT: First-Fit Algorithm (MFT)", True, BLACK if background else NEON_GREEN)
+        title_surface = font_title.render("MEMORY MANAGEMENT: First Fit (MFT)", True, BLACK if background else NEON_GREEN)
         screen.blit(title_surface, (20, 10))
 
         # 2. Rendering Content States

@@ -13,7 +13,7 @@ SCREEN_HEIGHT = 720
 def ff_compaction_logic(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("First-Fit MVT Algorithm (No Compaction)")
+    pygame.display.set_caption("First Fit (MVT - With Compaction)")
     clock = pygame.time.Clock()
 
     try:
@@ -94,32 +94,50 @@ def ff_compaction_logic(screen):
                                 requested_size = int(raw_size)
                                 if requested_size <= 0: raise ValueError
                                 p_name = f"P{process_counter}"
-                                first_idx = -1
+                                allocated = False
+                                
+                                while True:
+                                    first_idx = -1
+                                    # Scan linearly for the FIRST matching hole
+                                    for i, block in enumerate(memory_map):
+                                        if block['status'] == 'FREE' and block['size'] >= requested_size:
+                                            first_idx = i
+                                            break
 
-                                # Linearly find the absolute first hole available
-                                for i, block in enumerate(memory_map):
-                                    if block['status'] == 'FREE' and block['size'] >= requested_size:
-                                        first_idx = i
+                                    if first_idx != -1:
+                                        target = memory_map[first_idx]
+                                        if target['size'] == requested_size:
+                                            target['status'] = p_name
+                                        else:
+                                            new_block = {'start': target['start'], 'size': requested_size, 'status': p_name}
+                                            target['start'] += requested_size
+                                            target['size'] -= requested_size
+                                            memory_map.insert(first_idx, new_block)
+                                        
+                                        log_message = f"Allocated {p_name} ({requested_size} units) using First-Fit."
+                                        process_counter += 1
+                                        error_message = ""
                                         break
-
-                                if first_idx != -1:
-                                    target = memory_map[first_idx]
-                                    if target['size'] == requested_size:
-                                        target['status'] = p_name
-                                    else:
-                                        new_block = {'start': target['start'], 'size': requested_size, 'status': p_name}
-                                        target['start'] += requested_size
-                                        target['size'] -= requested_size
-                                        memory_map.insert(first_idx, new_block)
                                     
-                                    log_message = f"Allocated {p_name} ({requested_size} units) using First-Fit."
-                                    process_counter += 1
-                                    error_message = ""
-                                else:
-                                    # Dropping instantaneous rejection (No Compaction)
-                                    error_message = f"Out of memory! {p_name} does not fit any hole."
-                                    log_message = f"Allocation failed for {p_name} due to fragmentation."
-
+                                    # Compaction step execution
+                                    total_free = sum(b['size'] for b in memory_map if b['status'] == 'FREE')
+                                    if total_free >= requested_size:
+                                        log_message = "No single block fits. Compacting segments..."
+                                        allocated_blocks = [b for b in memory_map if b['status'] != 'FREE']
+                                        new_map = []
+                                        current_addr = 0
+                                        for b in allocated_blocks:
+                                            b['start'] = current_addr
+                                            new_map.append(b)
+                                            current_addr += b['size']
+                                        if total_free > 0:
+                                            new_map.append({'start': current_addr, 'size': total_free, 'status': 'FREE'})
+                                        memory_map = new_map
+                                        continue 
+                                    else:
+                                        error_message = f"Out of memory! {p_name} is too large."
+                                        log_message = f"Allocation failed for {p_name}."
+                                        break
                                 proc_size_input = ""
                             except ValueError:
                                 error_message = "Enter a valid positive process size!"
@@ -148,7 +166,7 @@ def ff_compaction_logic(screen):
         if background: screen.blit(background, (0, 0))
         else: screen.fill(BLACK)
 
-        title_surface = font_title.render("MEMORY MANAGEMENT: First-Fit MVT (No Compaction)", True, BLACK if background else NEON_GREEN)
+        title_surface = font_title.render("MEMORY MANAGEMENT: First Fit (MVT - With Compaction)", True, BLACK if background else NEON_GREEN)
         screen.blit(title_surface, (20, 10))
 
         if state == 0:
@@ -210,8 +228,3 @@ def ff_compaction_logic(screen):
         screen.blit(back_surface, back_rect.topleft)
         pygame.display.flip()
         clock.tick(30)
-
-if __name__ == "__main__":
-    pygame.init()
-    test_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    ff_compaction_logic(test_screen)
