@@ -1,23 +1,22 @@
-# First-Fit Memory Management Algorithm
 import pygame
 import sys
 import os
-from .first_fit_mft import mft_menu
-from .first_fit_mvt import mvt_menu
+from .best_fit import bf_menu
+from .best_available_fit import baf_menu
+from .first_fit import ff_menu
+from .worst_fit import wf_menu
 
 # Constants & Configurations
 NEON_GREEN = (57, 255, 20)
 BLACK = (0, 0, 0)
-RED = (255, 0, 0)
 
-# Screen Size Dimensions
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
-def ff_menu(screen):
+def mm_main_menu(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("First Fit Simulator")
+    pygame.display.set_caption("Memory Management Simulator")
     clock = pygame.time.Clock()
 
     # Load Background Canvas
@@ -40,8 +39,10 @@ def ff_menu(screen):
 
     # Menu Options Mapping
     menu_options = [
-        ("[1] Variable number of Tasks (MVT)", mvt_menu),
-        ("[2] Fixed number of Tasks (MFT)", mft_menu),
+        ("[1] Best Fit", bf_menu),
+        ("[2] Best Available Fit", baf_menu),
+        ("[3] First Fit", ff_menu),
+        ("[4] Worst Fit", wf_menu),
     ]
 
     # Pre-calculate positions to create clean hover/click boundaries
@@ -79,7 +80,7 @@ def ff_menu(screen):
                             # Pass the screen variable into your standalone module loops
                             func(screen)
                             # Restore window caption limits after returning from sub-modules
-                            pygame.display.set_caption("First Fit Simulator")
+                            pygame.display.set_caption("Memory Management Simulator")
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -93,7 +94,7 @@ def ff_menu(screen):
             screen.fill(BLACK)
 
         # 1. Main Title Header Render
-        title_surf = font_header.render("FIRST FIT", True, NEON_GREEN)
+        title_surf = font_header.render("MEMORY MANAGEMENT", True, NEON_GREEN)
         title_rect = title_surf.get_rect(center=(SCREEN_WIDTH // 2, 150))
         screen.blit(title_surf, title_rect)
 
@@ -130,4 +131,4 @@ def ff_menu(screen):
 if __name__ == "__main__":
     pygame.init()
     test_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    ff_menu(test_screen)
+    mm_main_menu(test_screen)

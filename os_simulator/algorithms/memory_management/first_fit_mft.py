@@ -9,10 +9,10 @@ RED = (255, 0, 0)
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
-def baf_menu(screen):
+def mft_menu(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Best Available Fit Simulator")
+    pygame.display.set_caption("First Fit Simulator (MFT)")
     clock = pygame.time.Clock()
 
     try:
@@ -40,6 +40,7 @@ def baf_menu(screen):
     partitions_input = ""
     proc_size_input = ""
     error_message = ""
+    part_str = ""
 
     # Main UI loop
     running = True
@@ -103,7 +104,7 @@ def baf_menu(screen):
                         if event.unicode.isdigit() or event.unicode == ',':
                             partitions_input += event.unicode
 
-                elif state == 1:  # Step 2: Input Process Size & Allocate
+                elif state == 1:  
                     if event.key == pygame.K_RETURN:
                         if proc_size_input.strip() != "":
                             try:
@@ -111,7 +112,7 @@ def baf_menu(screen):
                                 if s_val <= 0:
                                     raise ValueError
                                 
-                                # --- FIXED INTEGRATED BEST-AVAILABLE-FIT LOGIC ---
+                                # --- INLINE INTEGRATED BEST-AVAILABLE-FIT LOGIC ---
                                 process_number = len(jobs) + 1
                                 job_item = {
                                     "process_id": f"P{process_number}",
@@ -122,43 +123,27 @@ def baf_menu(screen):
                                 
                                 partition_count = len(memory_size)
                                 optimal_index = -1
-                                available_swap_index = -1  
-                                
-                                # STEP 1: Scan for the absolute SMALLEST partition that is FREE and fits
+
+                                # Find first available partition that fits
                                 for block_index in range(partition_count):
                                     if memory_size[block_index] >= job_item["size"] and not partition_busy[block_index]:
-                                        if optimal_index == -1 or memory_size[block_index] < memory_size[optimal_index]:
-                                            optimal_index = block_index
-                                    
-                                # STEP 2: If no FREE partition fits, look for the SMALLEST busy one to SWAP OUT
-                                if optimal_index == -1:
-                                    for block_index in range(partition_count):
-                                        if memory_size[block_index] >= job_item["size"] and partition_busy[block_index]:
-                                            if available_swap_index == -1 or memory_size[block_index] < memory_size[available_swap_index]:
-                                                available_swap_index = block_index
-                                    
-                                # STEP 3: Execute allocation or swap based on choices above
+                                            if optimal_index == -1:
+                                                optimal_index = block_index
+
+                                
                                 if optimal_index != -1:
-                                    # Found an open slot! Allocate cleanly.
+                                    # Success! An available slot was found
                                     job_item["allocated_partition"] = optimal_index + 1
                                     job_item["fragmentation"] = memory_size[optimal_index] - job_item["size"]
                                     partition_busy[optimal_index] = True
-                                
-                                elif available_swap_index != -1:
-                                    # Adjust and swap out the old job to make room in the best fitting slot.
-                                    for old_job in jobs:
-                                        if old_job["allocated_partition"] == available_swap_index + 1:
-                                            old_job["allocated_partition"] = "Swapped Out"
-                                            old_job["fragmentation"] = 0
-                                        
-                                    job_item["allocated_partition"] = available_swap_index + 1
-                                    job_item["fragmentation"] = memory_size[available_swap_index] - job_item["size"]
-                                    partition_busy[available_swap_index] = True
-                                else: 
-                                    # Process is completely too massive for any partition shape in the system
+                                    last_changed_idx = optimal_index  # Sets row highlight color reference
+                                else:
+                                    # Failed: Remaining partitions are either full or too small
                                     job_item["allocated_partition"] = "Too Large"
+                                    last_changed_idx = -1
                                     
                                 jobs.append(job_item)
+                                # ---------------------------------------------------
                                 
                                 proc_size_input = ""
                                 error_message = ""
@@ -172,6 +157,27 @@ def baf_menu(screen):
                         if event.unicode.isdigit():
                             proc_size_input += event.unicode
 
+
+    
+            pygame.draw.line(screen, NEON_GREEN, (50, 520), (SCREEN_WIDTH - 50, 520), 2)
+            
+            txt_title = f"MFT FIXED MATRIX ACTIVATED: [{part_str}]"
+            txt_input = f"Enter Process Size: [{proc_size_input}]"
+            txt_hint  = "Press [ENTER] to execute evaluation logic loops."
+
+            surf_title = font_title.render(txt_title, True, NEON_GREEN)
+            surf_input = font_input.render(txt_input, True, NEON_GREEN)
+            surf_hint  = font_table.render(txt_hint, True, NEON_GREEN)
+
+            # Draw the texts horizontally aligned along the lower panel section
+            screen.blit(surf_title, (50, 535))
+            screen.blit(surf_input, (50, 580))
+            screen.blit(surf_hint,  (SCREEN_WIDTH - surf_hint.get_width() - 50, 580))
+
+            if error_message:
+                err_surf = font_title.render(error_message, True, RED)
+                screen.blit(err_surf, (50, 620))
+
         # Rendering Background Graphics
         if background:
             screen.blit(background, (0, 0))
@@ -179,7 +185,7 @@ def baf_menu(screen):
             screen.fill(BLACK)
 
         # 1. Top Left Header Panel
-        title_surface = font_title.render("MEMORY MANAGEMENT: Best Available Fit", True, BLACK if background else NEON_GREEN)
+        title_surface = font_title.render("MEMORY MANAGEMENT: First Fit (MFT)", True, BLACK if background else NEON_GREEN)
         screen.blit(title_surface, (20, 10))
 
         # 2. Rendering Content States
@@ -274,11 +280,11 @@ def baf_menu(screen):
                 
                 current_y += map_height_per_block + 10  # Spacing layout gap
 
-            # Display Waiting Queue (Swapped Out) processes below the visual map blocks
-            swapped_jobs = [j for j in jobs if j["allocated_partition"] == "Swapped Out"]
-            if swapped_jobs:
+            # Display Starvation processes below the visual map blocks
+            waiting_jobs = [j for j in jobs if j["allocated_partition"] == "Out of Space"]
+            if waiting_jobs:
                 queue_y = current_y + 15
-                queue_txt = "Waiting Queue (Swapped Out): " + ", ".join([f"{j['process_id']} ({j['size']})" for j in swapped_jobs])
+                queue_txt = "Waiting Queue: " + ", ".join([f"{j['process_id']} ({j['size']})" for j in waiting_jobs])
                 queue_surf = font_table.render(queue_txt, True, RED)
                 screen.blit(queue_surf, queue_surf.get_rect(center=(SCREEN_WIDTH // 2, queue_y)))
 
@@ -296,4 +302,4 @@ def baf_menu(screen):
 if __name__ == "__main__":
     pygame.init()
     test_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    baf_menu(test_screen)
+    mft_menu(test_screen)

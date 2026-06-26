@@ -1,1 +1,0 @@
-# Handles all data visualization, plotting, and animation for the OS simulator UI.

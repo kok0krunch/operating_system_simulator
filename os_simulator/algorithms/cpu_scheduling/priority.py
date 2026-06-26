@@ -1,183 +1,477 @@
 # Priority Scheduling Algorithm - Preemptive and Non-Preemptive
-class Process_prio:
-    # Initialize the process with name, arrival time, burst time, priority, completion time, and remaining time
-    def __init__(self, name, arrival_time, burst_time, priority):
-        self.name = name
+import pygame
+import sys
+import os
+
+NEON_GREEN = (57, 255, 20)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+WHITE = (255, 255, 255)
+DARK_GRAY = (40, 40, 40)
+
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
+
+class Process:
+    def __init__(self, pid, arrival_time, burst_time, priority):
+        self.pid = pid  
         self.arrival_time = arrival_time
         self.burst_time = burst_time
         self.priority = priority
-        self.completion_time = 0
-        # This is for preemptive priority scheduling
         self.remaining_time = burst_time
+        self.completion_time = 0
+        self.turnaround_time = 0
+        self.waiting_time = 0
 
-    # Calculate the completion time of the process based on the previous completion time
-    def calc_ct(self, prev_completion_time):
-        if self.arrival_time > prev_completion_time:
-            self.completion_time = self.arrival_time + self.burst_time
-        else:
-            self.completion_time = prev_completion_time + self.burst_time
-
-    # Calculate the turnaround time of the process
-    def calc_tat(self):
-        return self.completion_time - self.arrival_time
-
-    # Calculate the waiting time of the process
-    def calc_wt(self):
-        return self.calc_tat() - self.burst_time
+def run_non_preemptive(process_list):
+    unarrived = [Process(p.pid, p.arrival_time, p.burst_time, p.priority) for p in process_list]
+    ready_queue = []
+    completed = []
+    gantt_log = [] 
     
-    # Simulate the execution of the process, if remaining time not 0, return False and continue execution
-    def execute(self):
-        # Simulate the execution of the process
-        self.remaining_time -= 1
-        if self.remaining_time <= 0:
-            return True  # Process has completed execution
-        return False  # Process is still running
-    
-    def prio_sched_nonpre(processes: list):
-        # Sort processes by arrival time and then by priority
-        processes.sort(key=lambda x: (x.arrival_time, x.priority))
-        
-        # Initialize a time variable to keep track of the current time since the start of scheduling
-        time = 0
-
-        # Initialize a list of completed processes
-        completed_processes = []
-
-        # Arrived processes that are ready to execute
-        ready_processes = []
-
-        while processes:
-
-            # Get the ready processes that have arrived by the current time
-            for process in processes:
-                if process.arrival_time <= time and process not in ready_processes:
-                    ready_processes.append(process)
-
-            # If there are no ready processes at time, increment time and continue to the next iteration
-            if not ready_processes:
-                time += 1
-                continue
-
-            # Sort ready processes by priority (lower number indicates higher priority)
-            ready_processes.sort(key=lambda x: x.priority)
-
-            current_process = ready_processes[0]  # The process with the earliest arrival time and highest priority
-
-            # Execute the current process until it completes
-            while current_process.remaining_time > 0:
-                time += 1  # Increment time
-                # Sort ready processes by priority (lower number indicates higher priority)
-                ready_processes.sort(key=lambda x: x.priority)
-
-                if current_process.execute():  # Execute the current process
-                    current_process.calc_ct(prev_completion_time=time)  # Calculate completion time for current process
-                    completed_processes.append(current_process)  # Add current process to completed processes
-                    if current_process in ready_processes:
-                        ready_processes.remove(current_process)  # Remove current process from ready processes
-                    processes.remove(current_process)  # Remove current process from processes
-                    current_process = ready_processes[0] if ready_processes else None  # Select the next process to execute
-                    break  # Exit the loop to select the next process
-
-        # Calculate Turnaround Time (TAT) for each process
-        tat_list = [process.calc_tat() for process in completed_processes]
-
-        # Calculate average TAT
-        avg_tat = sum(tat_list) / len(tat_list)
-
-        # Calculate Waiting Time (WT) for each process
-        wt_list = [process.calc_wt() for process in completed_processes]
-
-        # Calculate average WT
-        avg_wt = sum(wt_list) / len(wt_list)
-
-        return completed_processes, tat_list, wt_list, avg_tat, avg_wt
-    
-    def prio_sched_pre(processes: list):
-        # Initialize a time variable to keep track of the current time since the start of scheduling
-        time = 0 
-
-        # Initialize a list of completed processes
-        completed_processes = []   
-
-        # Initialize a list of ready processes that have arrived and are ready to execute
-        ready_processes = []
-
-        # Initialize a boolean whether to preempt or not, if a higher priority process arrives
-        preempt = False
-
-        # Protocol for case of no processes to schedule, return empty lists and average TAT and WT of 0
-        if processes:
-            processes.sort(key=lambda x: (x.arrival_time, x.priority))
-            while not ready_processes:
-                for process in processes:
-                    if process.arrival_time <= time and process not in ready_processes:
-                        ready_processes.append(process)
-                    if not ready_processes:
-                        time += 1
-                        continue
-        else:
-            print("No processes to schedule.")
-            return [], [], [], 0, 0  # No processes to schedule, return empty lists and average TAT and WT of 0
-        
-        current_process = ready_processes[0]  # The process with the earliest arrival time and highest priority
-
-        while processes:
-            # Get the ready processes that have arrived by the current time
-            for process in processes:
-                if process.arrival_time <= time and process not in ready_processes:
-                    ready_processes.append(process)
-                    ready_processes.sort(key=lambda x: x.priority)  # Sort ready processes by priority (lower number indicates higher priority)
-                    # If a new process arrives with higher priority than the current process, preempt the current process
-                    if process.priority < current_process.priority and current_process in ready_processes:
-                        current_process = process  # Preempt current process if a higher priority job arrives
-                        continue
+    current_time = 0
+    while unarrived or ready_queue:
+        arrived = [p for p in unarrived if p.arrival_time <= current_time]
+        for p in arrived:
+            ready_queue.append(p)
+            unarrived.remove(p)
             
-            # If there are no ready processes at time, increment time and continue to the next iteration
-            if not ready_processes:
-                time += 1
-                continue
-
-            # Execute the current process until it completes
-            while current_process.remaining_time > 0:
-                time += 1  # Increment time
-                # Execute the current process
-                if current_process.execute():
-                    current_process.calc_ct(prev_completion_time=time)  # Calculate completion time for current process
-                    completed_processes.append(current_process)  # Add current process to completed processes
-                    if current_process in ready_processes:
-                        ready_processes.remove(current_process)  # Remove current process from ready processes
-                    processes.remove(current_process)  # Remove current process from processes
-                else: 
-                    # Get the ready processes that have arrived by the current time
-                    for process in processes:
-                        if process.arrival_time <= time and process not in ready_processes:
-                            ready_processes.append(process)
-                            ready_processes.sort(key=lambda x: x.priority)  # Sort ready processes by priority (lower number indicates higher priority)
-                        # If a new process arrives with higher priority than the current process, preempt the current process
-                        if process.priority < current_process.priority and current_process in ready_processes:
-                            current_process = process  # Preempt current process if a higher priority job arrives
-                            preempt = True
-                            continue  # continue the for loop to select the next process
-
-                    # If preempt is True, break the while loop to select the next process
-                    if preempt:
-                        preempt = False
-                        break  # Exit the loop to select the next process
-
-                    continue # Continue iterating if preemption is not required and the current process is still executing
+        if not ready_queue:
+            next_arrival = min([p.arrival_time for p in unarrived])
+            gantt_log.append(("IDLE", current_time, next_arrival))
+            current_time = next_arrival
+            continue
+            
+        ready_queue.sort(key=lambda x: x.priority)
+        curr = ready_queue.pop(0)
         
-        # Calculate Turnaround Time (TAT) for each process
-        tat_list = [process.calc_tat() for process in completed_processes]
+        start_t = current_time
+        current_time += curr.burst_time
+        curr.completion_time = current_time
+        curr.turnaround_time = curr.completion_time - curr.arrival_time
+        curr.waiting_time = curr.turnaround_time - curr.burst_time
+        
+        gantt_log.append((f"P{curr.pid}", start_t, current_time))
+        completed.append(curr)
+        
+    return completed, gantt_log
 
-        # Calculate average TAT
-        avg_tat = sum(tat_list) / len(tat_list)
-
-        # Calculate Waiting Time (WT) for each process
-        wt_list = [process.calc_wt() for process in completed_processes]
-
-        # Calculate average WT
-        avg_wt = sum(wt_list) / len(wt_list)
-
-        return completed_processes, tat_list, wt_list, avg_tat, avg_wt
-                    
+def run_preemptive(process_list):
+    unarrived = [Process(p.pid, p.arrival_time, p.burst_time, p.priority) for p in process_list]
+    ready_queue = []
+    completed = []
+    gantt_log = []
     
+    current_time = 0
+    curr_running = None
+    segment_start = 0
+    
+    while unarrived or ready_queue or curr_running:
+        arrived = [p for p in unarrived if p.arrival_time <= current_time]
+        for p in arrived:
+            ready_queue.append(p)
+            unarrived.remove(p)
+            
+        if ready_queue:
+            ready_queue.sort(key=lambda x: x.priority)
+            if curr_running is None:
+                curr_running = ready_queue.pop(0)
+                segment_start = current_time
+            elif ready_queue[0].priority < curr_running.priority:
+                if current_time > segment_start:
+                    gantt_log.append((f"P{curr_running.pid}", segment_start, current_time))
+                ready_queue.append(curr_running)
+                curr_running = ready_queue.pop(0)
+                segment_start = current_time
+                
+        if curr_running is None:
+            if unarrived:
+                next_arrival = min([p.arrival_time for p in unarrived])
+                gantt_log.append(("IDLE", current_time, next_arrival))
+                current_time = next_arrival
+                continue
+            else:
+                break
+                
+        current_time += 1
+        curr_running.remaining_time -= 1
+        
+        if curr_running.remaining_time == 0:
+            gantt_log.append((f"P{curr_running.pid}", segment_start, current_time))
+            curr_running.completion_time = current_time
+            curr_running.turnaround_time = curr_running.completion_time - curr_running.arrival_time
+            curr_running.waiting_time = curr_running.turnaround_time - curr_running.burst_time
+            completed.append(curr_running)
+            curr_running = None
+            
+    clean_gantt = []
+    for entry in gantt_log:
+        if clean_gantt and clean_gantt[-1][0] == entry[0]:
+            clean_gantt[-1] = (clean_gantt[-1][0], clean_gantt[-1][1], entry[2])
+        else:
+            clean_gantt.append(entry)
+            
+    return completed, clean_gantt
+
+def priority_menu(screen):
+    pygame.init()
+    clock = pygame.time.Clock()
+    
+    # Try Loading Background Component
+    try:
+        background = pygame.image.load("os_simulator\\components\\background.png").convert()
+        background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    except Exception:
+        background = None
+    
+    # Verify Font Asset Integrity
+    font_path = "os_simulator\\components\\VT323-Regular.ttf"
+    if not os.path.exists(font_path):
+        print(f"CRITICAL ERROR: The font file '{font_path}' was not found in the directory.")
+        pygame.quit()
+        sys.exit()
+    
+    # Initialize UI elements with custom TTF asset
+    font_title = pygame.font.Font(font_path, 36) 
+    font_setup = pygame.font.Font(font_path, 46) 
+    font_input = pygame.font.Font(font_path, 55) 
+    font_table = pygame.font.Font(font_path, 32) 
+    
+    # Navigation & Logic Variables
+    state = 0  
+    is_preemptive = False
+    process_count = 0
+    process_data = [] 
+    
+    # Structural Input Buffers
+    count_input = ""
+    specs_input = ""
+    current_entry_index = 0 
+    input_field_index = 0   
+    temp_specs = [None, None, None] 
+    error_message = ""
+    
+    # Simulation Output Registers
+    completed_jobs = []
+    gantt_timeline = []
+    avg_tat = 0.0
+    avg_wt = 0.0
+
+    running = True
+    while running:
+        mouse_pos = pygame.mouse.get_pos()
+        
+        # Render Background Layer
+        if background:
+            screen.blit(background, (0, 0))
+        else:
+            screen.fill(BLACK)
+        
+        # Top Left Header Panel
+        title_surface = font_title.render("CPU SCHEDULING: Priority Scheduling Algorithm", True, BLACK)
+        screen.blit(title_surface, (20, 10))
+        
+        # Pre-create the < BACK button interaction area
+        back_surf_idle = font_setup.render("< BACK", True, NEON_GREEN)
+        back_rect = back_surf_idle.get_rect(topleft=(30, 650))
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+                
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left Click
+                    if back_rect.collidepoint(mouse_pos):
+                        if state == 0:
+                            running = False
+                            return
+                        else:
+                            # Step rewind logic
+                            if state == 3:
+                                state = 2
+                            elif state == 2:
+                                state = 1
+                                count_input = str(process_count)
+                            elif state == 1:
+                                state = 0
+                                count_input = ""
+                            error_message = ""
+                            continue
+                    
+                    # Core Strategic Selections
+                    if state == 0:
+                        b1_rect = pygame.Rect(440, 280, 400, 60)
+                        b2_rect = pygame.Rect(440, 380, 400, 60)
+                        if b1_rect.collidepoint(mouse_pos):
+                            is_preemptive = False
+                            state = 1
+                        elif b2_rect.collidepoint(mouse_pos):
+                            is_preemptive = True
+                            state = 1
+                            
+                    elif state == 2 and len(process_data) == process_count:
+                        # Calculation trigger boundary box
+                        eval_rect = pygame.Rect(490, 240, 300, 50)
+                        if eval_rect.collidepoint(mouse_pos):
+                            if is_preemptive:
+                                completed_jobs, gantt_timeline = run_preemptive(process_data)
+                            else:
+                                completed_jobs, gantt_timeline = run_non_preemptive(process_data)
+                            
+                            avg_tat = sum([p.turnaround_time for p in completed_jobs]) / len(completed_jobs)
+                            avg_wt = sum([p.waiting_time for p in completed_jobs]) / len(completed_jobs)
+                            state = 3
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                    return
+
+                if state == 1:  # Process Count Input
+                    if event.key == pygame.K_RETURN:
+                        raw = count_input.strip()
+                        if raw != "":
+                            try:
+                                count = int(raw)
+                                if count <= 0 or count > 6: 
+                                    raise ValueError
+                                process_count = count
+                                process_data = []
+                                current_entry_index = 0
+                                input_field_index = 0
+                                temp_specs = [None, None, None]
+                                count_input = ""
+                                state = 2
+                                error_message = ""
+                            except ValueError:
+                                error_message = "Invalid Count (1 - 6)!"
+                        else:
+                            error_message = "Input cannot be empty!"
+                    elif event.key == pygame.K_BACKSPACE:
+                        count_input = count_input[:-1]
+                    else:
+                        if event.unicode.isdigit():
+                            count_input += event.unicode
+
+                elif state == 2 and current_entry_index < process_count:  # Structural Row Population
+                    if event.key == pygame.K_RETURN:
+                        raw = specs_input.strip()
+                        if raw != "":
+                            try:
+                                val = int(raw)
+                                if val < 0:
+                                    raise ValueError
+                                temp_specs[input_field_index] = val
+                                specs_input = ""
+                                error_message = ""
+                                
+                                if input_field_index < 2:
+                                    input_field_index += 1
+                                else:
+                                    process_data.append(Process(current_entry_index + 1, temp_specs[0], temp_specs[1], temp_specs[2]))
+                                    current_entry_index += 1
+                                    input_field_index = 0
+                                    temp_specs = [None, None, None]
+                            except ValueError:
+                                error_message = "Values must be valid positive integers!"
+                        else:
+                            error_message = "Value cannot be empty!"
+                    elif event.key == pygame.K_BACKSPACE:
+                        specs_input = specs_input[:-1]
+                    else:
+                        if event.unicode.isdigit():
+                            specs_input += event.unicode
+                            
+                elif state == 3:  # End Evaluation Dashboard Reset
+                    if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                        state = 0
+                        count_input = ""
+                        specs_input = ""
+                        process_data = []
+                        completed_jobs = []
+                        gantt_timeline = []
+        
+        # State Rendering Logic
+        if state == 0:
+            txt1 = "Choose a CPU Scheduling Priority Mode Strategy:"
+            surf1 = font_input.render(txt1, True, NEON_GREEN)
+            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 130)))
+            
+            b1_rect = pygame.Rect(440, 300, 400, 60)
+            b2_rect = pygame.Rect(440, 380, 400, 60)
+            
+            if b1_rect.collidepoint(mouse_pos):
+                pygame.draw.rect(screen, NEON_GREEN, b1_rect, 0, 4)
+
+            if b2_rect.collidepoint(mouse_pos):
+                pygame.draw.rect(screen, NEON_GREEN, b2_rect, 0, 4)
+            
+            t_non = font_setup.render("[1] NON-PREEMPTIVE", True, BLACK if b1_rect.collidepoint(mouse_pos) else NEON_GREEN)
+            t_pre = font_setup.render("[2] PREEMPTIVE", True, BLACK if b2_rect.collidepoint(mouse_pos) else NEON_GREEN)
+            
+            screen.blit(t_non, t_non.get_rect(center=b1_rect.center))
+            screen.blit(t_pre, t_pre.get_rect(center=b2_rect.center))
+            
+        elif state == 1:
+            mode_lbl = "Strategy Selected: " + ("PREEMPTIVE" if is_preemptive else "NON-PREEMPTIVE")
+            lbl_surf = font_table.render(mode_lbl, True, RED)
+            screen.blit(lbl_surf, lbl_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 200)))
+
+            txt1 = "Initialize the CPU Scheduling Workspace Parameters"
+            txt2 = "Enter the number of active processes to evaluate:"
+            txt3 = f"[ {count_input} ]"
+
+            surf1 = font_input.render(txt1, True, NEON_GREEN)
+            surf2 = font_input.render(txt2, True, NEON_GREEN)
+            surf3 = font_input.render(txt3, True, NEON_GREEN) 
+
+            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 110)))
+            screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50)))
+            screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 95)))
+
+            if error_message:
+                err_surf = font_title.render(error_message, True, RED)
+                screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 180)))
+
+        elif state == 2:
+            fields = ["Arrival Time", "Burst Time", "Priority Value"]
+            hdr_str = "POLICY: " + ("PREEMPTIVE" if is_preemptive else "NON-PREEMPTIVE") + f" | CAPACITY SIZE: {process_count} JOBS"
+            hdr_surf = font_table.render(hdr_str, True, RED)
+            screen.blit(hdr_surf, (50, 75))
+            
+            if current_entry_index < process_count:
+                txt1 = f"Enter {fields[input_field_index]} for Process [ P{current_entry_index + 1} ]:"
+                txt2 = f"[{specs_input}]"
+                
+                surf1 = font_input.render(txt1, True, NEON_GREEN)
+                surf2 = font_input.render(txt2, True, NEON_GREEN)
+                screen.blit(surf1, (50, 120))
+                screen.blit(surf2, (50, 175))
+            else:
+                eval_rect = pygame.Rect(490, 240, 300, 50)
+                pygame.draw.rect(screen, NEON_GREEN if eval_rect.collidepoint(mouse_pos) else BLACK, eval_rect, 0 if eval_rect.collidepoint(mouse_pos) else 2, 4)
+                exec_txt = font_setup.render("SEE GANTT CHART", True, BLACK if eval_rect.collidepoint(mouse_pos) else NEON_GREEN)
+                screen.blit(exec_txt, exec_txt.get_rect(center=eval_rect.center))
+                
+            if error_message:
+                err_surf = font_table.render(error_message, True, RED)
+                screen.blit(err_surf, (50, 225))
+                
+            # Dynamic Structured Registry Data Grid Layout
+            start_x, start_y = 140, 320
+            col_widths = [180, 240, 240, 240]
+            row_height = 40
+            
+            headers = ["Process ID", "Arrival Time", "Burst Time", "Priority (Low=High)"]
+            for idx, h in enumerate(headers):
+                h_surf = font_table.render(h, True, NEON_GREEN)
+                screen.blit(h_surf, (start_x + sum(col_widths[:idx]), start_y))
+                
+            pygame.draw.line(screen, NEON_GREEN, (start_x, start_y + 30), (SCREEN_WIDTH - start_x, start_y + 30), 1)
+            
+            for r_idx in range(process_count):
+                curr_y = start_y + 40 + (r_idx * row_height)
+                pid_lbl = f"P{r_idx + 1}"
+                row_color = WHITE if r_idx == current_entry_index else (NEON_GREEN if r_idx < current_entry_index else DARK_GRAY)
+                
+                p_surf = font_table.render(pid_lbl, True, row_color)
+                screen.blit(p_surf, (start_x, curr_y))
+                
+                if r_idx < len(process_data):
+                    val_at = str(process_data[r_idx].arrival_time)
+                    val_bt = str(process_data[r_idx].burst_time)
+                    val_pr = str(process_data[r_idx].priority)
+                elif r_idx == current_entry_index:
+                    val_at = str(temp_specs[0]) if temp_specs[0] is not None else ("?" if input_field_index == 0 else "")
+                    val_bt = str(temp_specs[1]) if temp_specs[1] is not None else ("?" if input_field_index == 1 else "")
+                    val_pr = str(temp_specs[2]) if temp_specs[2] is not None else ("?" if input_field_index == 2 else "")
+                else:
+                    val_at, val_bt, val_pr = "-", "-", "-"
+                    
+                screen.blit(font_table.render(val_at, True, row_color), (start_x + col_widths[0], curr_y))
+                screen.blit(font_table.render(val_bt, True, row_color), (start_x + col_widths[0] + col_widths[1], curr_y))
+                screen.blit(font_table.render(val_pr, True, row_color), (start_x + col_widths[0] + col_widths[1] + col_widths[2], curr_y))
+
+        elif state == 3:
+            # Diagram Simulation Grid Map Layout (Gantt Chart View)
+            gantt_y = 100
+            gantt_box_height = 50
+            chart_max_width = 1100
+            chart_start_x = 90
+            
+            total_duration = gantt_timeline[-1][2] if gantt_timeline else 1
+            lbl_g = font_table.render("GANTT TIMELINE CHART SIMULATION BLOCK:", True, NEON_GREEN)
+            screen.blit(lbl_g, (chart_start_x, gantt_y))
+            
+            box_start_y = gantt_y + 35
+            
+            for pid, start_t, end_t in gantt_timeline:
+                seg_pct = (end_t - start_t) / total_duration
+                box_width = int(seg_pct * chart_max_width)
+                box_x = chart_start_x + int((start_t / total_duration) * chart_max_width)
+                
+                block_rect = pygame.Rect(box_x, box_start_y, box_width, gantt_box_height)
+                pygame.draw.rect(screen, RED if pid == "IDLE" else NEON_GREEN, block_rect, 2)
+                
+                id_surf = font_table.render(pid, True, RED if pid == "IDLE" else NEON_GREEN)
+                screen.blit(id_surf, id_surf.get_rect(center=block_rect.center))
+                
+                t_surf = font_table.render(str(start_t), True, NEON_GREEN)
+                screen.blit(t_surf, (box_x, box_start_y + gantt_box_height + 2))
+                
+            if gantt_timeline:
+                last_t_surf = font_table.render(str(gantt_timeline[-1][2]), True, NEON_GREEN)
+                screen.blit(last_t_surf, (chart_start_x + chart_max_width - 15, box_start_y + gantt_box_height + 2))
+                
+            # Analytics Metric Computations Report Card Table Layout
+            calc_start_y = 265
+            col_c_widths = [160, 160, 160, 220, 220, 200]
+            calc_x = 90
+            
+            headers_c = ["Job ID", "Arrival", "Burst", "Completion", "Turnaround", "Waiting"]
+            for idx, hc in enumerate(headers_c):
+                hc_surf = font_table.render(hc, True, NEON_GREEN)
+                screen.blit(hc_surf, (calc_x + sum(col_c_widths[:idx]), calc_start_y))
+                
+            pygame.draw.line(screen, NEON_GREEN, (calc_x, calc_start_y + 30), (SCREEN_WIDTH - calc_x, calc_start_y + 30), 1)
+            
+            completed_jobs.sort(key=lambda x: x.pid)
+            for r_idx, job in enumerate(completed_jobs):
+                row_y = calc_start_y + 40 + (r_idx * 35)
+                metrics_text = [f"P{job.pid}", str(job.arrival_time), str(job.burst_time), str(job.completion_time), str(job.turnaround_time), str(job.waiting_time)]
+                
+                for c_idx, text in enumerate(metrics_text):
+                    color = RED if job.turnaround_time > 15 else NEON_GREEN
+                    m_surf = font_table.render(text, True, color)
+                    screen.blit(m_surf, (calc_x + sum(col_c_widths[:c_idx]), row_y))
+                    
+            # Averages Summary Metrics Panel
+            base_summary_y = calc_start_y + 40 + (len(completed_jobs) * 35) + 20
+            pygame.draw.line(screen, RED, (calc_x, base_summary_y - 10), (SCREEN_WIDTH - calc_x, base_summary_y - 10), 1)
+            
+            avg_tat_str = f"Average Turnaround Time (TAT): {avg_tat:.2f} ms"
+            avg_wt_str  = f"Average Waiting Time (WT):     {avg_wt:.2f} ms"
+            
+            screen.blit(font_table.render(avg_tat_str, True, NEON_GREEN), (calc_x, base_summary_y))
+            screen.blit(font_table.render(avg_wt_str, True, NEON_GREEN), (calc_x, base_summary_y + 30))
+            
+            prompt_txt = "Press [SPACE] or [ENTER] to start a new calculation"
+            prompt_surf = font_title.render(prompt_txt, True, NEON_GREEN)
+            screen.blit(prompt_surf, prompt_surf.get_rect(center=(SCREEN_WIDTH // 2, 620)))
+
+        # Interactive < BACK Button
+        if back_rect.collidepoint(mouse_pos):
+            pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
+            back_surface = font_setup.render("< BACK", True, BLACK)
+        else:
+            back_surface = font_setup.render("< BACK", True, NEON_GREEN)
+        screen.blit(back_surface, back_rect.topleft)
+
+        pygame.display.flip()
+        clock.tick(30)
+
+if __name__ == "__main__":
+    main_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Virtual Memory Framework UI Component")
+    priority_menu(main_screen)
