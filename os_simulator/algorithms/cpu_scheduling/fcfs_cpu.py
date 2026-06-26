@@ -1,237 +1,372 @@
-# Import necessary modules to implement pygame
+# First-Come, First-Served (FCFS) CPU Scheduling Algorithm Simulation
 import pygame
 import sys
 import os
 
-# Constants and Configurations
 NEON_GREEN = (57, 255, 20)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
+DARK_GRAY = (40, 40, 40)
 
-# Screen Size Dimensions
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
-# First-Come, First-Served (FCFS) CPU Scheduling Algorithm
-
-class Process_FCFS:
-    def __init__(self, name, arrival_time, burst_time):
-        self.name = name
+class Process:
+    def __init__(self, pid, arrival_time, burst_time):
+        self.pid = pid
         self.arrival_time = arrival_time
         self.burst_time = burst_time
         self.completion_time = 0
+        self.turnaround_time = 0
+        self.waiting_time = 0
 
-    def calc_ct(self, prev_completion_time):
-        if self.arrival_time > prev_completion_time:
-            self.completion_time = self.arrival_time + self.burst_time
-        else:
-            self.completion_time = prev_completion_time + self.burst_time
-    
-    def calc_tat(self):
-        return self.completion_time - self.arrival_time
-    
-    def calc_wt(self):
-        return self.calc_tat() - self.burst_time
-    
-    def fcfs_scheduling(processes):
-        # Sort processes by arrival time, check if there are any processes to schedule
-        if processes:
-            processes.sort(key=lambda x: x.arrival_time)
-        else: 
-            print("No processes to schedule.")
-            return [], [], [], 0, 0  # No processes to schedule, return empty lists and average TAT and WT of 0
-        
-        prev_completion_time = 0
-        for process in processes:
-            prev_completion_time += process.burst_time
-            process.calc_ct(prev_completion_time)
-            prev_completion_time = process.completion_time
-        
-        # Calculate Turnaround Time (TAT) for each process
-        tat_list = [process.calc_tat() for process in processes]
+def run_fcfs(process_list):
+    # First-Come, First-Served (FCFS): Sort by arrival time, run in that order
+    pending = sorted(
+        [Process(p.pid, p.arrival_time, p.burst_time) for p in process_list],
+        key=lambda x: x.arrival_time
+    )
+    completed = []
+    gantt_log = []
 
-        # Calculate average TAT
-        avg_tat = sum(tat_list) / len(tat_list)
+    current_time = 0
+    for curr in pending:
+        if curr.arrival_time > current_time:
+            gantt_log.append(("IDLE", current_time, curr.arrival_time))
+            current_time = curr.arrival_time
 
-        # Calculate Waiting Time (WT) for each process
-        wt_list = [process.calc_wt() for process in processes]
+        start_t = current_time
+        current_time += curr.burst_time
+        curr.completion_time = current_time
+        curr.turnaround_time = curr.completion_time - curr.arrival_time
+        curr.waiting_time = curr.turnaround_time - curr.burst_time
 
-        # Calculate average WT
-        avg_wt = sum(wt_list) / len(wt_list)
-        
-        return processes, tat_list, wt_list, avg_tat, avg_wt
-    
+        gantt_log.append((f"P{curr.pid}", start_t, current_time))
+        completed.append(curr)
+
+    return completed, gantt_log
+
+# -----------------------------------------------------------------------------
+# PYGAME INTERACTION INTERFACES
+# -----------------------------------------------------------------------------
+
 def fcfs_menu(screen):
-    """
-    Main GUI function for First Come, First Served Scheduling.
-    Can be imported and called from another script.
-    """
-    
-    # Initialize pygame
     pygame.init()
     clock = pygame.time.Clock()
 
-    # Load resources with fallbacks
+    # Try Loading Background Component
     try:
         background = pygame.image.load("os_simulator\\components\\background.png").convert()
         background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
-
     except Exception:
         background = None
 
-    # Load the uploaded VT323-Regular.ttf font file explicitly
+    # Verify Font Asset Integrity
     font_path = "os_simulator\\components\\VT323-Regular.ttf"
     if not os.path.exists(font_path):
         print(f"CRITICAL ERROR: The font file '{font_path}' was not found in the directory.")
         pygame.quit()
         sys.exit()
 
-    # Define font instances
-    font_title = pygame.font.Font(font_path, 36) 
-    font_setup = pygame.font.Font(font_path, 46) 
-    font_input = pygame.font.Font(font_path, 48) 
-    font_table = pygame.font.Font(font_path, 32) 
+    # Initialize UI elements with custom TTF asset
+    font_title = pygame.font.Font(font_path, 36)
+    font_setup = pygame.font.Font(font_path, 46)
+    font_input = pygame.font.Font(font_path, 55)
+    font_table = pygame.font.Font(font_path, 32)
 
-    # State machine variables 
+    # Navigation & Logic Variables
     state = 0
+    process_count = 0
+    process_data = []
+
+    # Structural Input Buffers
+    count_input = ""
+    specs_input = ""
+    current_entry_index = 0
+    input_field_index = 0
+    temp_specs = [None, None]
     error_message = ""
-    general_input = ""
-    int_input = ""
-    P_num = 1
-    process_name_input = ""
-    process_at_input = ""
-    process_bt_input = ""
 
-    # Process simulation variables
-    process_list = []
-    process_name = ""
-    process_at = ""
-    process_bt = ""
+    # Simulation Output Registers
+    completed_jobs = []
+    gantt_timeline = []
+    avg_tat = 0.0
+    avg_wt = 0.0
 
-    # Post simulation variables
-    completion_order = []
-    turnaround_times = []
-    waiting_times = []
-    avg_turnaround = 0
-    avg_waiting = 0
-
-    # Run FCFS loop
-
-    running = True 
+    running = True
     while running:
         mouse_pos = pygame.mouse.get_pos()
 
-        # Pre-create the < BACK button interaction area at the bottom left coordinates
+        # Render Background Layer
+        if background:
+            screen.blit(background, (0, 0))
+        else:
+            screen.fill(BLACK)
+
+        # Top Left Header Panel
+        title_surface = font_title.render("CPU SCHEDULING: First-Come, First-Served (FCFS) Algorithm", True, BLACK)
+        screen.blit(title_surface, (20, 10))
+
+        # Pre-create the < BACK button interaction area
         back_surf_idle = font_setup.render("< BACK", True, NEON_GREEN)
         back_rect = back_surf_idle.get_rect(topleft=(30, 650))
 
-        # Pre-create buttons for Input Another Process and Simulate
-
-        # This for-loop iterates through several if statements depending on event type
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                # Left click
-                if event.button == 1:
+                if event.button == 1:  # Left Click
                     if back_rect.collidepoint(mouse_pos):
-                        running = False
-                        return
+                        if state == 0:
+                            running = False
+                            return
+                        else:
+                            # Step rewind logic
+                            if state == 2:
+                                state = 1
+                            elif state == 1:
+                                state = 0
+                                count_input = str(process_count)
+                            error_message = ""
+                            continue
+
+                    elif state == 1 and len(process_data) == process_count:
+                        # Calculation trigger boundary box
+                        eval_rect = pygame.Rect(490, 240, 300, 50)
+                        if eval_rect.collidepoint(mouse_pos):
+                            completed_jobs, gantt_timeline = run_fcfs(process_data)
+
+                            avg_tat = sum([p.turnaround_time for p in completed_jobs]) / len(completed_jobs)
+                            avg_wt = sum([p.waiting_time for p in completed_jobs]) / len(completed_jobs)
+                            state = 2
 
             elif event.type == pygame.KEYDOWN:
-                # Escape = Back
                 if event.key == pygame.K_ESCAPE:
                     running = False
                     return
-                
-                elif state == 0: # Process name input
+
+                if state == 0:  # Process Count Input
                     if event.key == pygame.K_RETURN:
-                        raw = process_name_input.strip()
-                        if raw == "":
-                            process_name = f"P{P_num}"
-                            P_num += 1
-                            state += 1
-                            error_message = ""
-                        else: 
-                            if len(raw) > 4: 
-                                error_message = "Error: Process name must be 4 characters or less."
-                                continue
-                            else: 
-                                process_name = raw
-                                error_message = ""
-                
-                elif state == 1: # Process arrival time input
-
-                    # On key event ENTER
-                    if event.key == pygame.K_RETURN:
-                        raw = process_at_input.strip()
-                        # Default to 0 arrival if no input or input 0
-                        if raw == "" or raw == "0":
-                            process_at = 0
-                            state += 1
-                            error_message = ""
-
-                        # Else if length of raw is more than 3, that would mean raw > 1000 or raw = str
-                        elif len(raw) > 3:
-                            error_message = "Error: Process arrival takes too long or is a string"
-                            continue
-
-                        # If there is an input and length is valid, try converting to int, increment state, and reset error
-                        else: 
+                        raw = count_input.strip()
+                        if raw != "":
                             try:
-                                process_at = int(raw)
-                                state += 1
+                                count = int(raw)
+                                if count <= 0 or count > 6:
+                                    raise ValueError
+                                process_count = count
+                                process_data = []
+                                current_entry_index = 0
+                                input_field_index = 0
+                                temp_specs = [None, None]
+                                count_input = ""
+                                state = 1
                                 error_message = ""
-                                
-                            # Except if int conversion fails and a ValueError is raised
                             except ValueError:
-                                error_message = "Error: Input is not an integer and is invalid"
-                                continue
+                                error_message = "Invalid Count (1 - 6)!"
+                        else:
+                            error_message = "Input cannot be empty!"
+                    elif event.key == pygame.K_BACKSPACE:
+                        count_input = count_input[:-1]
+                    else:
+                        if event.unicode.isdigit():
+                            count_input += event.unicode
 
-                elif state == 2: # Process burst time input
-
-                    # On key event ENTER
+                elif state == 1 and current_entry_index < process_count:  # Structural Row Population
                     if event.key == pygame.K_RETURN:
-
-                        # Strip input of whitespaces on tail and rear
-                        raw = process_bt_input.strip()
-
-                        # Default to 1 when no input or input 1
-                        if raw == "" or raw == "1":
-                            process_bt = 1
-                            state += 1
-                            error_message = ""
-
-                        # Else if length of raw is more than 3, that would mean raw > 1000 or raw = str
-                        elif len(raw) > 3:
-                            error_message = "Error: Process burst takes too long or is a string"
-                            continue
-
-                        # If there is an input and length is valid, try converting to int, increment state, and reset error
-                        else: 
+                        raw = specs_input.strip()
+                        if raw != "":
                             try:
-                                process_bt = int(raw)
-                                state += 1
+                                val = int(raw)
+                                if val < 0:
+                                    raise ValueError
+                                temp_specs[input_field_index] = val
+                                specs_input = ""
                                 error_message = ""
-                                
-                            # Except if int conversion fails and a ValueError is raised
-                            except ValueError:
-                                error_message = "Error: Input is not an integer and is invalid"
-                                continue
 
-                elif state == 3: # Repeat process attribute input
-                    
-                    if len(process_list) == 1:
+                                if input_field_index < 1:
+                                    input_field_index += 1
+                                else:
+                                    process_data.append(Process(current_entry_index + 1, temp_specs[0], temp_specs[1]))
+                                    current_entry_index += 1
+                                    input_field_index = 0
+                                    temp_specs = [None, None]
+                            except ValueError:
+                                error_message = "Values must be valid positive integers!"
+                        else:
+                            error_message = "Value cannot be empty!"
+                    elif event.key == pygame.K_BACKSPACE:
+                        specs_input = specs_input[:-1]
+                    else:
+                        if event.unicode.isdigit():
+                            specs_input += event.unicode
+
+                elif state == 2:  # End Evaluation Dashboard Reset
+                    if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                         state = 0
+                        count_input = ""
+                        specs_input = ""
+                        process_data = []
+                        completed_jobs = []
+                        gantt_timeline = []
 
-                    elif len(process_list) > 1: 
-                        pass
+        # State Rendering Logic
+        if state == 0:
+            txt1 = "Initialize the CPU Scheduling Workspace Parameters"
+            txt2 = "Enter the number of active processes to evaluate:"
+            txt3 = f"[ {count_input} ]"
 
-                    # If process_list == 1: repeat immediately
-                    # If process_list >= 2: ask if repeat
-                    # If process_list is enough, increment state 
+            surf1 = font_input.render(txt1, True, NEON_GREEN)
+            surf2 = font_input.render(txt2, True, NEON_GREEN)
+            surf3 = font_input.render(txt3, True, NEON_GREEN)
 
-                elif state == 4: # Output (Gantt)
-                    pass
+            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 110)))
+            screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50)))
+            screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 95)))
+
+            if error_message:
+                err_surf = font_title.render(error_message, True, RED)
+                screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 180)))
+
+        elif state == 1:
+            fields = ["Arrival Time", "Burst Time"]
+            hdr_str = f"POLICY: FIRST-COME, FIRST-SERVED | CAPACITY SIZE: {process_count} JOBS"
+            hdr_surf = font_table.render(hdr_str, True, RED)
+            screen.blit(hdr_surf, (50, 75))
+
+            if current_entry_index < process_count:
+                txt1 = f"Enter {fields[input_field_index]} for Process [ P{current_entry_index + 1} ]:"
+                txt2 = f"[{specs_input}]"
+
+                surf1 = font_input.render(txt1, True, NEON_GREEN)
+                surf2 = font_input.render(txt2, True, NEON_GREEN)
+                screen.blit(surf1, (50, 120))
+                screen.blit(surf2, (50, 175))
+            else:
+                eval_rect = pygame.Rect(490, 240, 300, 50)
+
+                if eval_rect.collidepoint(mouse_pos):
+                    pygame.draw.rect(screen, NEON_GREEN, eval_rect, 0, 4)
+
+                exec_txt = font_setup.render("SEE GANTT CHART", True, BLACK if eval_rect.collidepoint(mouse_pos) else NEON_GREEN)
+                screen.blit(exec_txt, exec_txt.get_rect(center=eval_rect.center))
+
+            if error_message:
+                err_surf = font_table.render(error_message, True, RED)
+                screen.blit(err_surf, (50, 225))
+
+            # Dynamic Structured Registry Data Grid Layout
+            start_x, start_y = 240, 320
+            col_widths = [240, 280, 280]
+            row_height = 40
+
+            headers = ["Process ID", "Arrival Time", "Burst Time"]
+            for idx, h in enumerate(headers):
+                h_surf = font_table.render(h, True, NEON_GREEN)
+                screen.blit(h_surf, (start_x + sum(col_widths[:idx]), start_y))
+
+            pygame.draw.line(screen, NEON_GREEN, (start_x, start_y + 30), (SCREEN_WIDTH - start_x, start_y + 30), 1)
+
+            for r_idx in range(process_count):
+                curr_y = start_y + 40 + (r_idx * row_height)
+                pid_lbl = f"P{r_idx + 1}"
+                row_color = NEON_GREEN if r_idx == current_entry_index else (NEON_GREEN if r_idx < current_entry_index else DARK_GRAY)
+
+                p_surf = font_table.render(pid_lbl, True, row_color)
+                screen.blit(p_surf, (start_x, curr_y))
+
+                if r_idx < len(process_data):
+                    val_at = str(process_data[r_idx].arrival_time)
+                    val_bt = str(process_data[r_idx].burst_time)
+                elif r_idx == current_entry_index:
+                    val_at = str(temp_specs[0]) if temp_specs[0] is not None else ("?" if input_field_index == 0 else "")
+                    val_bt = str(temp_specs[1]) if temp_specs[1] is not None else ("?" if input_field_index == 1 else "")
+                else:
+                    val_at, val_bt = "-", "-"
+
+                screen.blit(font_table.render(val_at, True, row_color), (start_x + col_widths[0], curr_y))
+                screen.blit(font_table.render(val_bt, True, row_color), (start_x + col_widths[0] + col_widths[1], curr_y))
+
+        elif state == 2:
+            # Diagram Simulation Grid Map Layout (Gantt Chart View)
+            gantt_y = 100
+            gantt_box_height = 50
+            chart_max_width = 1100
+            chart_start_x = 90
+
+            total_duration = gantt_timeline[-1][2] if gantt_timeline else 1
+            lbl_g = font_table.render("GANTT TIMELINE CHART SIMULATION BLOCK:", True, NEON_GREEN)
+            screen.blit(lbl_g, (chart_start_x, gantt_y))
+
+            box_start_y = gantt_y + 35
+
+            for pid, start_t, end_t in gantt_timeline:
+                seg_pct = (end_t - start_t) / total_duration
+                box_width = int(seg_pct * chart_max_width)
+                box_x = chart_start_x + int((start_t / total_duration) * chart_max_width)
+
+                block_rect = pygame.Rect(box_x, box_start_y, box_width, gantt_box_height)
+                pygame.draw.rect(screen, RED if pid == "IDLE" else NEON_GREEN, block_rect, 2)
+
+                id_surf = font_table.render(pid, True, RED if pid == "IDLE" else NEON_GREEN)
+                screen.blit(id_surf, id_surf.get_rect(center=block_rect.center))
+
+                t_surf = font_table.render(str(start_t), True, NEON_GREEN)
+                screen.blit(t_surf, (box_x, box_start_y + gantt_box_height + 2))
+
+            if gantt_timeline:
+                last_t_surf = font_table.render(str(gantt_timeline[-1][2]), True, NEON_GREEN)
+                screen.blit(last_t_surf, (chart_start_x + chart_max_width - 15, box_start_y + gantt_box_height + 2))
+
+            # Analytics Metric Computations Report Card Table Layout
+            calc_start_y = 265
+            col_c_widths = [160, 160, 160, 220, 220, 200]
+            calc_x = 90
+
+            headers_c = ["Job ID", "Arrival", "Burst", "Completion", "Turnaround", "Waiting"]
+            for idx, hc in enumerate(headers_c):
+                hc_surf = font_table.render(hc, True, NEON_GREEN)
+                screen.blit(hc_surf, (calc_x + sum(col_c_widths[:idx]), calc_start_y))
+
+            pygame.draw.line(screen, NEON_GREEN, (calc_x, calc_start_y + 30), (SCREEN_WIDTH - calc_x, calc_start_y + 30), 1)
+
+            completed_jobs.sort(key=lambda x: x.pid)
+            for r_idx, job in enumerate(completed_jobs):
+                row_y = calc_start_y + 40 + (r_idx * 35)
+                metrics_text = [f"P{job.pid}", str(job.arrival_time), str(job.burst_time), str(job.completion_time), str(job.turnaround_time), str(job.waiting_time)]
+
+                for c_idx, text in enumerate(metrics_text):
+                    color = RED if job.turnaround_time > 15 else NEON_GREEN
+                    m_surf = font_table.render(text, True, color)
+                    screen.blit(m_surf, (calc_x + sum(col_c_widths[:c_idx]), row_y))
+
+            # Averages Summary Metrics Panel
+            base_summary_y = calc_start_y + 40 + (len(completed_jobs) * 35) + 20
+            pygame.draw.line(screen, RED, (calc_x, base_summary_y - 10), (SCREEN_WIDTH - calc_x, base_summary_y - 10), 1)
+
+            avg_tat_str = f"Average Turnaround Time (TAT): {avg_tat:.2f} ms"
+            avg_wt_str  = f"Average Waiting Time (WT):     {avg_wt:.2f} ms"
+
+            screen.blit(font_table.render(avg_tat_str, True, NEON_GREEN), (calc_x, base_summary_y))
+            screen.blit(font_table.render(avg_wt_str, True, NEON_GREEN), (calc_x, base_summary_y + 30))
+
+            prompt_txt = "Press [SPACE] or [ENTER] to start a new calculation"
+            prompt_surf = font_title.render(prompt_txt, True, NEON_GREEN)
+            screen.blit(prompt_surf, prompt_surf.get_rect(center=(SCREEN_WIDTH // 2, 620)))
+
+        # Interactive < BACK Button
+        if back_rect.collidepoint(mouse_pos):
+            pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
+            back_surface = font_setup.render("< BACK", True, BLACK)
+        else:
+            back_surface = font_setup.render("< BACK", True, NEON_GREEN)
+        screen.blit(back_surface, back_rect.topleft)
+
+        pygame.display.flip()
+        clock.tick(30)
+
+if __name__ == "__main__":
+    main_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Virtual Memory Framework UI Component")
+    fcfs_menu(main_screen)
