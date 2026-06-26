@@ -3,6 +3,11 @@
 import pygame
 import sys
 
+pygame.init()
+
+WIDTH = 1280
+HEIGHT = 720
+
 #class for SSTF
 class SSTFScheduling:
 
@@ -62,35 +67,27 @@ def draw_arrow(surface, color, start, end):
     
 
 #Main Program
-def main():
+def sstf_menu(screen):
 
-    pygame.init()
-
-    WIDTH = 1280
-    HEIGHT = 720
-
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("SSTF Disk Scheduling")
-
     clock = pygame.time.Clock()
 
     NEON_GREEN = (57, 255, 20)
     BLACK = (0, 0, 0)
-    # ----------------------------------
+
     # Assets
-    # ----------------------------------
-
-    background = pygame.image.load("os_simulator\\components\\background.png")
-    background = pygame.transform.scale(
-        background,
-        (WIDTH, HEIGHT)
-    )
-
-    font_title = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf",36)
-
-    font_large = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf",46)
-
-    font_small = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf",28)
+    try:
+        background = pygame.image.load("os_simulator\\components\\background.png")
+        background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+        font_title = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 36)
+        font_large = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 46)
+        font_small = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 28)
+    except pygame.error:
+        background = pygame.Surface((WIDTH, HEIGHT))
+        background.fill((20, 20, 20))
+        font_title = pygame.font.SysFont("Courier", 36)
+        font_large = pygame.font.SysFont("Courier", 46)
+        font_small = pygame.font.SysFont("Courier", 28)
 
 
     # Screens
@@ -109,51 +106,44 @@ def main():
     sequence = []
     total_head_movement = 0
 
+    # Static back button bounding box
+    back_rect = pygame.Rect(30, 650, 130, 40)
+
+    # interactive back button
+    def draw_interactive_back(mouse_pos):
+        if back_rect.collidepoint(mouse_pos):
+            pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
+            back_surf = font_large.render("< BACK", True, BLACK)
+        else:
+            back_surf = font_large.render("< BACK", True, NEON_GREEN)
+        screen.blit(back_surf, back_rect.topleft)
+
     #Draw head screen
 
-    def draw_head_screen():
-
+    # Draw head screen
+    def draw_head_screen(mouse_pos):
         screen.blit(background, (0, 0))
-
-        title = font_title.render("DISK SCHEDULING: Shortest Seek Time First",True, BLACK)
-
+        title = font_title.render("DISK SCHEDULING: SSTF", True, BLACK)
         screen.blit(title, (20, 10))
-
-        label = font_large.render("Input initial head position:",True,NEON_GREEN)
-
+        label = font_large.render("Input initial head position:", True, NEON_GREEN)
         screen.blit(label, (380, 280))
-
-        value = font_large.render(head_text,True,NEON_GREEN)
-
-        text_rect = value.get_rect(center= (WIDTH//2, 360))
-
-        screen.blit(value,text_rect)
-
-        back = font_large.render("< BACK",True,NEON_GREEN)
-
-        screen.blit(back, (30, 650))
+        value = font_large.render(head_text, True, NEON_GREEN)
+        text_rect = value.get_rect(center=(WIDTH // 2, 360))
+        screen.blit(value, text_rect)
+        draw_interactive_back(mouse_pos)
 
     #Draw request screen
 
-    def draw_request_screen():
-
+    # Draw request screen
+    def draw_request_screen(mouse_pos):
         screen.blit(background, (0, 0))
-
-        title = font_title.render("DISK SCHEDULING: Shortest Seek Time First",True,BLACK)
-
+        title = font_title.render("DISK SCHEDULING: SSTF", True, BLACK)
         screen.blit(title, (20, 10))
-
-        label = font_large.render("Input disk requests (comma separated):",True,NEON_GREEN)
-
+        label = font_large.render("Input disk requests (comma separated):", True, NEON_GREEN)
         screen.blit(label, (250, 280))
-
-        value = font_large.render(request_text,True,NEON_GREEN)
-
+        value = font_large.render(request_text, True, NEON_GREEN)
         screen.blit(value, (260, 340))
-
-        back = font_large.render("< BACK",True,NEON_GREEN)
-    
-        screen.blit(back, (30, 650))
+        draw_interactive_back(mouse_pos)
 
     #Draw graph
 
@@ -203,113 +193,94 @@ def main():
 
     #Draw result screen
     def draw_result_screen():
-
         screen.blit(background, (0, 0))
-
-        title = font_title.render(
-            "DISK SCHEDULING: Shortest Seek Time First",True,BLACK)
-
+        title = font_title.render("DISK SCHEDULING: Shortest Seek Time First", True, BLACK)
         screen.blit(title, (20, 10))
 
         draw_graph()
 
-        total = font_large.render(f"Total Head Movement: {total_head_movement}",True,NEON_GREEN)
+        total = font_large.render(f"Total Head Movement: {total_head_movement}", True, NEON_GREEN)
+        screen.blit(total, total.get_rect(center=(WIDTH // 2, 630)))
 
-        screen.blit(total, (40, 650))
+        prompt = font_title.render("Press [ESCAPE] to start a new calculation", True, NEON_GREEN)
+        screen.blit(prompt, prompt.get_rect(center=(WIDTH // 2, 675)))
 
-    #Game loop
+
+    # Game loop
     running = True
 
     while running:
+        mouse_pos = pygame.mouse.get_pos() 
 
         for event in pygame.event.get():
-
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
+                sys.exit()
 
-            if event.type == pygame.KEYDOWN:
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if back_rect.collidepoint(mouse_pos):
+                        if current_screen == HEAD_INPUT:
+                            running = False
+                            return
+                        elif current_screen in [REQUEST_INPUT]:
+                            current_screen -= 1
 
-                
-                #Head input screen
+
+            elif event.type == pygame.KEYDOWN:
+                # Head input screen
                 if current_screen == HEAD_INPUT:
-
                     if event.key == pygame.K_RETURN:
-
                         if head_text.strip() != "":
-
-                            head = int(head_text)
-                            current_screen = REQUEST_INPUT
-
+                            try:
+                                head = int(head_text)
+                                current_screen = REQUEST_INPUT
+                            except ValueError:
+                                pass
                     elif event.key == pygame.K_BACKSPACE:
-
                         head_text = head_text[:-1]
-
                     elif event.unicode.isdigit():
-
                         head_text += event.unicode
 
-               
-                #Request input screen
-
+                # Request input screen
                 elif current_screen == REQUEST_INPUT:
-
                     if event.key == pygame.K_RETURN:
-
                         try:
-
-                            requests = [int(x.strip())for x in request_text.split(",")]
-
-                            sstf = SSTFScheduling(head,requests)
-
-                            total_head_movement, sequence = (sstf.compute())
-
-                            current_screen = RESULT_SCREEN
-
+                            requests = [int(x.strip()) for x in request_text.split(",") if x.strip() != ""]
+                            if len(requests) > 0:
+                                sstf = SSTFScheduling(head, requests)
+                                total_head_movement, sequence = sstf.compute()
+                                current_screen = RESULT_SCREEN
                         except ValueError:
                             pass
-
                     elif event.key == pygame.K_BACKSPACE:
-
                         request_text = request_text[:-1]
-
                     else:
-
                         allowed = "0123456789, "
-
                         if event.unicode in allowed:
                             request_text += event.unicode
 
-                #Result Screen
+                # Result Screen
                 elif current_screen == RESULT_SCREEN:
-
                     if event.key == pygame.K_ESCAPE:
-
                         head_text = ""
                         request_text = ""
-
                         sequence = []
                         total_head_movement = 0
-
                         current_screen = HEAD_INPUT
 
-        #Draw current screen
 
         if current_screen == HEAD_INPUT:
-            draw_head_screen()
-
+            draw_head_screen(mouse_pos)
         elif current_screen == REQUEST_INPUT:
-            draw_request_screen()
-
+            draw_request_screen(mouse_pos)
         elif current_screen == RESULT_SCREEN:
             draw_result_screen()
 
         pygame.display.flip()
         clock.tick(60)
 
-    pygame.quit()
-    sys.exit()
-
-
-# ENTRY POINT
+# entry point
 if __name__ == "__main__":
-    main()
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    sstf_menu(screen)
