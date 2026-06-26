@@ -11,6 +11,7 @@ from meet_the_devs import show_devs
 # Import the topic-specific algorithm menu modules for the simulator
 from algorithms.virtual_memory.vm_pygame import main_vm_menu
 from algorithms.memory_management.mm_main_menu import mm_main_menu
+from algorithms.cpu_scheduling.cpu_scheduling_pygame import main_cpu_menu
 
 # Constants & Configurations
 NEON_GREEN = (57, 255, 20)
@@ -104,10 +105,8 @@ def main():
                                 # FUTURE COLLABORATOR PATHWAYS PLACEHOLDERS
                                 # =============================================================
                                 if action == "CPU":
-                                    # TODO: Collaborators add their file import and main function call here
-                                    # Example: from os_simulator.algorithms.cpu.cpu_pygame import main_cpu_menu
-                                    #          main_cpu_menu(screen)
-                                    print("CPU Scheduling chosen (Developer Incomplete)")
+                                    main_cpu_menu()
+                                    pygame.display.set_caption("Operating System Simulator")
                                     
                                 elif action == "MM":
                                     mm_main_menu(screen)
