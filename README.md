@@ -126,7 +126,7 @@ os_simulator/
 │       ├── mfu_pr.py
 │       ├── mru_pr.py
 │       ├── optimal_pr.py
-│       └── vm_pygame.py                     # Virtual memory module navigation hub
+│       └── vm_pygame.py
 │
 ├── components/                              # Shared Graphical UI Assets
 │   ├── background.png                       # System Terminal Backdrop Image
