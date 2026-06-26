@@ -57,7 +57,7 @@ def main_disk_menu():
         ("[2] Shortest Seek Time First (SSTF)", sstf_menu),
         ("[3] SCAN Scheduling (Elevator)", scan_menu),
         ("[4] Circular SCAN Scheduling (C-SCAN)", cscan_menu),
-        ("[5] LOOK Scheduling Algorithm", look_menu),
+        ("[5] LOOK Scheduling", look_menu),
         ("[6] Circular LOOK Scheduling (C-LOOK)", clook_menu)
     ]
 
