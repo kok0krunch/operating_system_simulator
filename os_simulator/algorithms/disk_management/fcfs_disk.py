@@ -99,7 +99,7 @@ def fcfs_menu(screen):
     # Draw head screen
     def draw_head_screen(mouse_pos):
         screen.blit(background, (0, 0))
-        title = font_title.render("DISK SCHEDULING: FCFS", True, BLACK)
+        title = font_title.render("DISK SCHEDULING: First-Come, First-Serve", True, BLACK)
         screen.blit(title, (20, 10))
         label = font_large.render("Input initial head position:", True, NEON_GREEN)
         screen.blit(label, (380, 280))
@@ -111,12 +111,14 @@ def fcfs_menu(screen):
     # Draw request screen
     def draw_request_screen(mouse_pos):
         screen.blit(background, (0, 0))
-        title = font_title.render("DISK SCHEDULING: FCFS", True, BLACK)
+        title = font_title.render("DISK SCHEDULING: First-Come, First-Serve", True, BLACK)
         screen.blit(title, (20, 10))
         label = font_large.render("Input disk requests (comma separated):", True, NEON_GREEN)
-        screen.blit(label, (250, 280))
-        value = font_large.render(request_text, True, NEON_GREEN)
-        screen.blit(value, (260, 340))
+        screen.blit(label, label.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 40)))
+        
+        display_text = f"{request_text}"
+        value = font_large.render(display_text, True, NEON_GREEN)
+        screen.blit(value, value.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 40)))
         draw_interactive_back(mouse_pos)
 
     #Draw graph
