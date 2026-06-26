@@ -1,1 +1,0 @@
-# Input and layout components for the OS simulator UI.
