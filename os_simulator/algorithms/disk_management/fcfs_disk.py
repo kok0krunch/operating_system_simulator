@@ -2,24 +2,19 @@
 import pygame
 import sys
 
-
 pygame.init()
 
 WIDTH = 1280
 HEIGHT = 720
 
-#class FCFS
 class FCFSDiskScheduling:
-
     def __init__(self, head, requests):
         self.head = head
         self.requests = requests
 
     def compute(self):
-
         total_movement = 0
         sequence = [self.head]
-
         current = self.head
 
         for request in self.requests:
@@ -29,7 +24,7 @@ class FCFSDiskScheduling:
 
         return total_movement, sequence
 
-#Draw arrow
+# Draw arrow
 def draw_arrow(surface, color, start, end):
     pygame.draw.line(surface, color, start, end, 1)
 
@@ -47,7 +42,7 @@ def draw_arrow(surface, color, start, end):
     pygame.draw.line(surface, color, end, (end[0] + left.x, end[1] + left.y), 3)
     pygame.draw.line(surface, color, end, (end[0] + right.x, end[1] + right.y), 3)
 
-#Main Program
+# Main Program
 def fcfs_menu(screen):
     pygame.display.set_caption("FCFS Disk Scheduling")
     clock = pygame.time.Clock()
@@ -57,17 +52,17 @@ def fcfs_menu(screen):
 
     # Assets
     try:
-        background = pygame.image.load("os_simulator\\components\\background.png")
+        background = pygame.image.load("os_simulator\\components\\background.png").convert()
         background = pygame.transform.scale(background, (WIDTH, HEIGHT))
         font_title = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 36)
         font_large = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 46)
-        font_small = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 28)
+        font_marker = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 18)
     except pygame.error:
         background = pygame.Surface((WIDTH, HEIGHT))
         background.fill((20, 20, 20))
         font_title = pygame.font.SysFont("Courier", 36)
         font_large = pygame.font.SysFont("Courier", 46)
-        font_small = pygame.font.SysFont("Courier", 28)
+        font_marker = pygame.font.SysFont("Courier", 18)
 
     # Screens
     HEAD_INPUT = 0
@@ -87,7 +82,7 @@ def fcfs_menu(screen):
     # Static back button bounding box
     back_rect = pygame.Rect(30, 650, 130, 40)
 
-    # interactive back button
+    # Interactive back button
     def draw_interactive_back(mouse_pos):
         if back_rect.collidepoint(mouse_pos):
             pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
@@ -101,11 +96,12 @@ def fcfs_menu(screen):
         screen.blit(background, (0, 0))
         title = font_title.render("DISK SCHEDULING: First-Come, First-Serve", True, BLACK)
         screen.blit(title, (20, 10))
+        
         label = font_large.render("Input initial head position:", True, NEON_GREEN)
-        screen.blit(label, (380, 280))
+        screen.blit(label, label.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 40)))
+        
         value = font_large.render(head_text, True, NEON_GREEN)
-        text_rect = value.get_rect(center=(WIDTH // 2, 360))
-        screen.blit(value, text_rect)
+        screen.blit(value, value.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 40)))
         draw_interactive_back(mouse_pos)
 
     # Draw request screen
@@ -113,15 +109,15 @@ def fcfs_menu(screen):
         screen.blit(background, (0, 0))
         title = font_title.render("DISK SCHEDULING: First-Come, First-Serve", True, BLACK)
         screen.blit(title, (20, 10))
+        
         label = font_large.render("Input disk requests (comma separated):", True, NEON_GREEN)
         screen.blit(label, label.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 40)))
         
-        display_text = f"{request_text}"
-        value = font_large.render(display_text, True, NEON_GREEN)
+        value = font_large.render(request_text, True, NEON_GREEN)
         screen.blit(value, value.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 40)))
         draw_interactive_back(mouse_pos)
 
-    #Draw graph
+    # Draw graph
     def draw_graph():
         if len(sequence) == 0:
             return
@@ -129,23 +125,27 @@ def fcfs_menu(screen):
         graph_width = 1000
         start_x = (WIDTH - graph_width) // 2
         end_x = start_x + graph_width
-        axis_y = 120
+        axis_y = 140
 
         pygame.draw.line(screen, NEON_GREEN, (start_x, axis_y), (end_x, axis_y), 3)
 
         max_value = max(sequence) if max(sequence) > 0 else 1
 
-        #Draw cylinder markers
-        for value in sequence:
+        unique_tracks = sorted(list(set(sequence)))
+
+        # Draw cylinder markers
+        for value in unique_tracks:
             x = start_x + (value / max_value) * (end_x - start_x)
-            pygame.draw.line(screen, NEON_GREEN, (x, 105), (x, 135), 4)
+            pygame.draw.line(screen, NEON_GREEN, (x, 125), (x, 155), 4)
 
-            label = font_small.render(str(value), True, NEON_GREEN)
-            screen.blit(label, label.get_rect(center=(x, 70)))
+            label = font_marker.render(str(value), True, NEON_GREEN)
+            screen.blit(label, label.get_rect(center=(x, 100)))
 
-        #Draw head movement
-        base_y = 200
-        step_y = 40
+        # Draw head movement
+        base_y = axis_y + 40
+        available_height = 380
+        total_steps = len(sequence) - 1 if len(sequence) > 1 else 1
+        step_y = min(35, available_height / total_steps)
 
         for i in range(len(sequence) - 1):
             current = sequence[i]
@@ -192,7 +192,6 @@ def fcfs_menu(screen):
                             return
                         elif current_screen in [REQUEST_INPUT]:
                             current_screen -= 1
-
 
             elif event.type == pygame.KEYDOWN:
                 # Head input screen
@@ -246,7 +245,6 @@ def fcfs_menu(screen):
         pygame.display.flip()
         clock.tick(60)
 
-# entry point
 if __name__ == "__main__":
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     fcfs_menu(screen)
