@@ -1,71 +1,252 @@
-def wf_compaction_logic():
-    pass
+import pygame
+import sys
+import os
 
+NEON_GREEN = (57, 255, 20)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+WHITE = (255, 255, 255)
 
-    def mvt_settings(self):
-         if self.memory_size is None:
-             while True:
-                try:
-                    memory_size_input = input("Enter total memory block size: ").strip()
-                    if int(memory_size_input) <= 0:
-                        raise ValueError
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
+
+def wf_compaction_logic(screen):
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Worst-Fit MVT Algorithm with Compaction")
+    clock = pygame.time.Clock()
+
+    try:
+        background = pygame.image.load("os_simulator\\components\\background.png").convert()
+        background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    except Exception:
+        background = None
+
+    font_path = "os_simulator\\components\\VT323-Regular.ttf"
+    font_exists = os.path.exists(font_path)
+
+    if not font_exists:
+        font_title = pygame.font.SysFont("monospace", 36)
+        font_setup = pygame.font.SysFont("monospace", 46)
+        font_input = pygame.font.SysFont("monospace", 48)
+        font_table = pygame.font.SysFont("monospace", 32)
+    else:
+        font_title = pygame.font.Font(font_path, 36) 
+        font_setup = pygame.font.Font(font_path, 46) 
+        font_input = pygame.font.Font(font_path, 48) 
+        font_table = pygame.font.Font(font_path, 32) 
+
+    total_memory_size = 0
+    memory_map = []
+    
+    state = 0 
+    total_mem_input = ""
+    proc_size_input = ""
+    error_message = ""
+    log_message = "Initialize system capacity to begin."
+    process_counter = 1
+
+    running = True
+    while running:
+        mouse_pos = pygame.mouse.get_pos()
+        back_surf_idle = font_setup.render("< BACK", True, NEON_GREEN)
+        back_rect = back_surf_idle.get_rect(topleft=(30, 650))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1 and back_rect.collidepoint(mouse_pos):
+                    running = False
+                    return
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                    return
+
+                if state == 0:  
+                    if event.key == pygame.K_RETURN:
+                        raw = total_mem_input.strip()
+                        if raw != "":
+                            try:
+                                val = int(raw)
+                                if val <= 0: raise ValueError
+                                total_memory_size = val
+                                memory_map = [{'start': 0, 'size': total_memory_size, 'status': 'FREE'}]
+                                state = 1
+                                error_message = ""
+                                log_message = f"System initialized with {total_memory_size} units."
+                            except ValueError:
+                                error_message = "Enter a valid positive integer!"
+                        else:
+                            error_message = "Input cannot be empty!"
+                    elif event.key == pygame.K_BACKSPACE:
+                        total_mem_input = total_mem_input[:-1]
+                    elif event.unicode.isdigit():
+                        total_mem_input += event.unicode
+
+                elif state == 1:  
+                    if event.key == pygame.K_RETURN:
+                        raw_size = proc_size_input.strip()
+                        if raw_size != "":
+                            try:
+                                requested_size = int(raw_size)
+                                if requested_size <= 0: raise ValueError
+                                p_name = f"P{process_counter}"
+                                
+                                while True:
+                                    worst_idx = -1
+                                    largest_fit = -1
+                                    
+                                    # Scan for the WORST (largest) fitting hole
+                                    for i, block in enumerate(memory_map):
+                                        if block['status'] == 'FREE' and block['size'] >= requested_size:
+                                            if block['size'] > largest_fit:
+                                                largest_fit = block['size']
+                                                worst_idx = i
+
+                                    if worst_idx != -1:
+                                        target = memory_map[worst_idx]
+                                        if target['size'] == requested_size:
+                                            target['status'] = p_name
+                                        else:
+                                            new_block = {'start': target['start'], 'size': requested_size, 'status': p_name}
+                                            target['start'] += requested_size
+                                            target['size'] -= requested_size
+                                            memory_map.insert(worst_idx, new_block)
+                                        
+                                        log_message = f"Allocated {p_name} ({requested_size} units) using Worst-Fit."
+                                        process_counter += 1
+                                        error_message = ""
+                                        break
+                                    
+                                    # Compaction fallback logic if no single block matches
+                                    total_free = sum(b['size'] for b in memory_map if b['status'] == 'FREE')
+                                    if total_free >= requested_size:
+                                        log_message = "No single block fits. Compacting segments..."
+                                        allocated_blocks = [b for b in memory_map if b['status'] != 'FREE']
+                                        new_map = []
+                                        current_addr = 0
+                                        for b in allocated_blocks:
+                                            b['start'] = current_addr
+                                            new_map.append(b)
+                                            current_addr += b['size']
+                                        if total_free > 0:
+                                            new_map.append({'start': current_addr, 'size': total_free, 'status': 'FREE'})
+                                        memory_map = new_map
+                                        continue 
+                                    else:
+                                        error_message = f"Out of memory! {p_name} is too large."
+                                        log_message = f"Allocation failed for {p_name}."
+                                        break
+                                proc_size_input = ""
+                            except ValueError:
+                                error_message = "Enter a valid positive process size!"
+                        else:
+                            error_message = "Please enter a process size!"
                     
-                    else:
-                        self.memory_size=int(memory_size_input)
-                        break
-                except:
-                    print("Memory size should only be positive integers. Please input a valid number.")
-        
-         while True:
-            try:
-                process_size_input = input("enter process size: ").strip()
-                burst_time_input = input("enter burst time: ").strip()
+                    elif event.key == pygame.K_d:
+                        target_p = None
+                        for block in memory_map:
+                            if block['status'] != 'FREE':
+                                target_p = block['status']
+                                block['status'] = 'FREE'
+                                break
+                        
+                        if target_p:
+                            log_message = f"Deallocated {target_p}. Shifting remaining jobs upward..."
+                            
+                            # COMPACTION: Proactively squeeze out free slots upward instantly
+                            allocated_blocks = [b for b in memory_map if b['status'] != 'FREE']
+                            total_free = sum(b['size'] for b in memory_map if b['status'] == 'FREE')
+                            
+                            new_map = []
+                            current_addr = 0
+                            for b in allocated_blocks:
+                                b['start'] = current_addr
+                                new_map.append(b)
+                                current_addr += b['size']
+                                
+                            if total_free > 0:
+                                new_map.append({'start': current_addr, 'size': total_free, 'status': 'FREE'})
+                                
+                            memory_map = new_map
+                        else:
+                            log_message = "No active processes to deallocate."
+                                
+                    elif event.key == pygame.K_BACKSPACE:
+                        proc_size_input = proc_size_input[:-1]
+                    elif event.unicode.isdigit():
+                        proc_size_input += event.unicode
 
-                if int(process_size_input) > 0 and int(burst_time_input) > 0:
-                    self.add_process(process_size_input, burst_time_input)
-                    break
-                    
-                elif int(process_size_input) <= 0 or int(burst_time_input) <= 0:
-                    raise ValueError
+        if background: screen.blit(background, (0, 0))
+        else: screen.fill(BLACK)
+
+        title_surface = font_title.render("MEMORY MANAGEMENT: Worst-Fit MVT (With Compaction)", True, BLACK if background else NEON_GREEN)
+        screen.blit(title_surface, (20, 10))
+
+        if state == 0:
+            txt1, txt2, txt3 = "Initialize Variable Partition Total Memory Capacity", "Enter total system memory units available", "(e.g., 500 or 1000):"
+            txt4 = f"[{total_mem_input}]"
+            surf1, surf2, surf3, surf4 = font_input.render(txt1, True, NEON_GREEN), font_input.render(txt2, True, NEON_GREEN), font_input.render(txt3, True, NEON_GREEN), font_input.render(txt4, True, NEON_GREEN)
+            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 120)))
+            screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 60)))
+            screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20)))
+            screen.blit(surf4, surf4.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 90)))
+            if error_message:
+                err_surf = font_title.render(error_message, True, RED)
+                screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 160)))
+
+        elif state == 1:
+            txt1, txt2, txt3 = f"Total System Memory Managed: {total_memory_size} Units", f"Enter Incoming Process Size:  [{proc_size_input}]", "Press [ENTER] to Allocate | Press [D] to Deallocate Oldest Process"
+            surf1, surf2, surf3 = font_input.render(txt1, True, NEON_GREEN), font_input.render(txt2, True, NEON_GREEN), font_table.render(txt3, True, NEON_GREEN)
+            log_surf = font_table.render(f"System Log: {log_message}", True, NEON_GREEN)
+            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, 75)))
+            screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, 125)))
+            screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, 170)))
+            screen.blit(log_surf, log_surf.get_rect(center=(SCREEN_WIDTH // 2, 210)))
+
+            if error_message:
+                err_surf = font_title.render(error_message, True, RED)
+                screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, 245)))
+
+            map_width, total_render_height, start_x, start_y = 400, 320, (SCREEN_WIDTH - 400) // 2, 280
+            for block in memory_map:
+                pixel_y = start_y + int((block['start'] / total_memory_size) * total_render_height)
+                pixel_h = int((block['size'] / total_memory_size) * total_render_height)
+                if pixel_h < 12: pixel_h = 12
+                block_rect = pygame.Rect(start_x, pixel_y, map_width, pixel_h)
                 
-            except:
-                print("Process size and burst time should be positive integers. Please input valid numbers.")  
-
-
-    def mvt_logic(self, compaction_enabled=False):
-        if self.mvt_free_segments is None:
-            self.mvt_free_segments = [[0, self.memory_size]]
-
-        for dynamic_job in self.jobs:
-            if dynamic_job["allocated_partition"] is not None:
-                continue
-
-            best_segment_pos = -1
-            for seg_idx, target_segment in enumerate(self.mvt_free_segments):
-                if target_segment[1] >= dynamic_job["size"]:
-                    if best_segment_pos == -1 or target_segment[1] < self.mvt_free_segments[best_segment_pos][1]:
-                        best_segment_pos = seg_idx
-            
-
-            if best_segment_pos == -1 and compaction_enabled:
-                total_free_space = sum(segment[1] for segment in self.mvt_free_segments)
-                if total_free_space >= dynamic_job["size"]:
-                    print(f"\n[Compaction Triggered for {dynamic_job['process_id']}]")
-                    
-                    used_space_boundary = self.memory_size - total_free_space
-                    self.mvt_free_segments = [[used_space_boundary, total_free_space]]
-                    
-                    best_segment_pos = 0
-
-            if best_segment_pos != -1:
-                matched_seg = self.mvt_free_segments[best_segment_pos]
-                dynamic_job["allocated_partition"] = f"Address Range {matched_seg[0]} to {matched_seg[0] + dynamic_job['size']}"
-                dynamic_job["fragmentation"] = 0
+                dynamic_size = max(10, min(32, int(pixel_h * 0.6)))
+                block_font = pygame.font.Font(font_path, dynamic_size) if font_exists else pygame.font.SysFont("monospace", dynamic_size)
                 
-                if matched_seg[1] == dynamic_job["size"]:
-                    self.mvt_free_segments.pop(best_segment_pos)
+                if block['status'] != 'FREE':
+                    pygame.draw.rect(screen, RED, block_rect, 2)
+                    pygame.draw.line(screen, RED, (start_x, pixel_y), (start_x + map_width, pixel_y + pixel_h), 1)
+                    pygame.draw.line(screen, RED, (start_x, pixel_y + pixel_h), (start_x + map_width, pixel_y), 1)
+                    info_text = f"{block['status']} ({block['size']} units)"
+                    info_surf = block_font.render(info_text, True, RED)
+                    screen.blit(info_surf, info_surf.get_rect(center=block_rect.center))
+                    loc_surf = font_table.render(f"Range: {block['start']}-{block['start']+block['size']}", True, RED)
+                    screen.blit(loc_surf, (start_x + map_width + 15, pixel_y + (pixel_h // 2) - 12))
                 else:
-                    matched_seg[0] += dynamic_job["size"] # Increment starting address
-                    matched_seg[1] -= dynamic_job["size"] # Reduce chunk capacity 
-            else:
-                dynamic_job["allocated_partition"] = "Not Allocated"
+                    pygame.draw.rect(screen, NEON_GREEN, block_rect, 2)
+                    info_text = f"FREE HOLE ({block['size']} units)"
+                    info_surf = block_font.render(info_text, True, NEON_GREEN)
+                    screen.blit(info_surf, info_surf.get_rect(center=block_rect.center))
+                    loc_surf = font_table.render(f"Start Addr: {block['start']}", True, NEON_GREEN)
+                    screen.blit(loc_surf, (start_x - 220, pixel_y + (pixel_h // 2) - 12))
+
+        if back_rect.collidepoint(mouse_pos):
+            pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
+            back_surface = font_setup.render("< BACK", True, BLACK)
+        else: back_surface = font_setup.render("< BACK", True, NEON_GREEN)
+        screen.blit(back_surface, back_rect.topleft)
+        pygame.display.flip()
+        clock.tick(30)
+
+if __name__ == "__main__":
+    pygame.init()
+    test_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    wf_compaction_logic(test_screen)
