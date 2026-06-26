@@ -2,8 +2,8 @@
 import pygame
 import sys
 import os
-from first_fit_mft import mft_menu
-from first_fit_mvt import mvt_menu
+from .first_fit_mft import mft_menu
+from .first_fit_mvt import mvt_menu
 
 # Constants & Configurations
 NEON_GREEN = (57, 255, 20)
