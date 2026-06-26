@@ -40,7 +40,7 @@ def mvt_menu(screen):
     # Menu Options Mapping
     menu_options = [
         ("[1] With Compaction", bf_compaction_logic),
-        ("[2] Without COmpaction", bf_no_compaction_logic),
+        ("[2] Without Compaction", bf_no_compaction_logic),
     ]
 
     # Pre-calculate positions to create clean hover/click boundaries
