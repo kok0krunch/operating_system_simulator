@@ -79,8 +79,8 @@ def fcfs_menu(screen):
     sequence = []
     total_head_movement = 0
 
-    # Static back button bounding box
-    back_rect = pygame.Rect(30, 650, 130, 40)
+    back_surf_idle = font_large.render("< BACK", True, NEON_GREEN)
+    back_rect = back_surf_idle.get_rect(topleft=(30, 650))
 
     # Interactive back button
     def draw_interactive_back(mouse_pos):
@@ -94,7 +94,7 @@ def fcfs_menu(screen):
     # Draw head screen
     def draw_head_screen(mouse_pos):
         screen.blit(background, (0, 0))
-        title = font_title.render("DISK SCHEDULING: First-Come, First-Serve", True, BLACK)
+        title = font_title.render("DISK SCHEDULING: First-Come, First-Served", True, BLACK)
         screen.blit(title, (20, 10))
         
         label = font_large.render("Input initial head position:", True, NEON_GREEN)
@@ -107,7 +107,7 @@ def fcfs_menu(screen):
     # Draw request screen
     def draw_request_screen(mouse_pos):
         screen.blit(background, (0, 0))
-        title = font_title.render("DISK SCHEDULING: First-Come, First-Serve", True, BLACK)
+        title = font_title.render("DISK SCHEDULING: First-Come, First-Served", True, BLACK)
         screen.blit(title, (20, 10))
         
         label = font_large.render("Input disk requests (comma separated):", True, NEON_GREEN)
@@ -162,7 +162,7 @@ def fcfs_menu(screen):
     # Draw result screen
     def draw_result_screen():
         screen.blit(background, (0, 0))
-        title = font_title.render("DISK SCHEDULING: First-Come, First-Serve", True, BLACK)
+        title = font_title.render("DISK SCHEDULING: First-Come, First-Served", True, BLACK)
         screen.blit(title, (20, 10))
 
         draw_graph()

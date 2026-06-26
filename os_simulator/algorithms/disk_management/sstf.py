@@ -89,8 +89,8 @@ def sstf_menu(screen):
     sequence = []
     total_head_movement = 0
 
-    # Static back button bounding box
-    back_rect = pygame.Rect(30, 650, 130, 40)
+    back_surf_idle = font_large.render("< BACK", True, NEON_GREEN)
+    back_rect = back_surf_idle.get_rect(topleft=(30, 650))
 
     # Interactive back button
     def draw_interactive_back(mouse_pos):

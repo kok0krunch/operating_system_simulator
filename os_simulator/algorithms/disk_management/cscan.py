@@ -114,7 +114,6 @@ def cscan_menu(screen):
     font_large = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 46)
     font_marker = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 18)
 
-
     # Screens
     HEAD_INPUT = 0
     REQUEST_INPUT = 1
@@ -138,8 +137,9 @@ def cscan_menu(screen):
     sequence = []
     total_head_movement = 0
 
-    # Static back button bounding box matching template specifications
-    back_rect = pygame.Rect(30, 650, 130, 40)
+    # Static back button bounding box tracking text dimensions
+    back_surf_idle = font_large.render("< BACK", True, NEON_GREEN)
+    back_rect = back_surf_idle.get_rect(topleft=(30, 650))
 
     # Interactive back button component
     def draw_interactive_back(mouse_pos):
@@ -253,7 +253,7 @@ def cscan_menu(screen):
                 curr_x = x1
                 curr_y = y1
                 step_y_dash = (y2 - y1) / (num_dashes * 2 if num_dashes > 0 else 1)
-                
+               
                 for _ in range(num_dashes):
                     next_x = curr_x + step_x
                     next_y = curr_y + step_y_dash
@@ -281,7 +281,6 @@ def cscan_menu(screen):
 
     while running:
         mouse_pos = pygame.mouse.get_pos()
-        back_rect = pygame.Rect(30, 650, 130, 40)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -360,6 +359,7 @@ def cscan_menu(screen):
                         sequence = []
                         total_head_movement = 0
                         current_screen = HEAD_INPUT
+
         # Scene Dispatchers
         if current_screen == HEAD_INPUT:
             draw_head_screen(mouse_pos)

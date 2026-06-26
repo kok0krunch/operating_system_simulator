@@ -125,8 +125,10 @@ def scan_menu(screen):
     sequence = []
     total_head_movement = 0
 
-    back_rect = pygame.Rect(30, 650, 130, 40)
+    back_surf_idle = font_large.render("< BACK", True, NEON_GREEN)
+    back_rect = back_surf_idle.get_rect(topleft=(30, 650))
 
+    # Interactive back button
     def draw_interactive_back(mouse_pos):
         if back_rect.collidepoint(mouse_pos):
             pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
