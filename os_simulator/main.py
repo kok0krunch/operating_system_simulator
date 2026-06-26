@@ -60,7 +60,7 @@ def main():
         ("[4] Disk Management", "DISK")
     ]
 
-    def build_buttons(options_list, base_y, gap_y=62, width=600):
+    def build_buttons(options_list, base_y, gap_y=73, width=600):
         rects = []
         center_x = SCREEN_WIDTH // 2 - width // 2
         for i, (text, action) in enumerate(options_list):
