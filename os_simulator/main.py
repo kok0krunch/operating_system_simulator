@@ -101,9 +101,6 @@ def main():
                         
                         for rect, text, action in topic_buttons:
                             if rect.collidepoint(mouse_pos):
-                                # =============================================================
-                                # FUTURE COLLABORATOR PATHWAYS PLACEHOLDERS
-                                # =============================================================
                                 if action == "CPU":
                                     main_cpu_menu()
                                     pygame.display.set_caption("Operating System Simulator")
@@ -113,7 +110,6 @@ def main():
                                     pygame.display.set_caption("Operating System Simulator")
                                     
                                 elif action == "VM":
-                                    # Virtual Memory is complete and safely linked
                                     main_vm_menu()
                                     pygame.display.set_caption("Operating System Simulator")
                                     
@@ -122,7 +118,6 @@ def main():
                                     # Example: from os_simulator.algorithms.disk.disk_pygame import main_disk_menu
                                     #          main_disk_menu(screen)
                                     print("Disk Management chosen (Developer Incomplete)")
-                                # =============================================================
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
