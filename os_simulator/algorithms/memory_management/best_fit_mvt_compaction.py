@@ -10,7 +10,7 @@ WHITE = (255, 255, 255)
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
-def baf_menu(screen):
+def bf_compaction_logic(screen):
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Best-Fit MVT Algorithm with Compaction")
@@ -293,4 +293,4 @@ def baf_menu(screen):
 if __name__ == "__main__":
     pygame.init()
     test_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    baf_menu(test_screen)
+    bf_compaction_logic(test_screen)
