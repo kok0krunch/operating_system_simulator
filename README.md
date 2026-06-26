@@ -62,6 +62,7 @@ The simulator features a responsive interface designed to feel like a vintage co
 * **`[BACKSPACE]`**: Deletes the last entered character inside the input strings.
 * **`[ENTER] / [RETURN]`**: Submits validated configuration strings and transitions into the calculation/graph visualization screens.
 * **`[SPACE]`**: Resets completed tracking output charts to the initial state machine loop to begin a new simulation instantly.
+* **`[ESCAPE]`**: Pops out of the running module sub-loop or menu layer, safely returning to the previous dashboard panel.
 
 ---
 
