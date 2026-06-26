@@ -5,7 +5,6 @@ import os
 NEON_GREEN = (57, 255, 20)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
-WHITE = (255, 255, 255)
 
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
