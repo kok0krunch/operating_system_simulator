@@ -12,7 +12,7 @@ from meet_the_devs import show_devs
 from algorithms.virtual_memory.vm_pygame import main_vm_menu
 from algorithms.memory_management.mm_main_menu import mm_main_menu
 from algorithms.cpu_scheduling.cpu_scheduling_pygame import main_cpu_menu
-
+from algorithms.disk_management.dm_pygame import main_disk_menu
 # Constants & Configurations
 NEON_GREEN = (57, 255, 20)
 BLACK = (0, 0, 0)
@@ -114,10 +114,9 @@ def main():
                                     pygame.display.set_caption("Operating System Simulator")
                                     
                                 elif action == "DISK":
-                                    # TODO: Collaborators add their file import and main function call here
-                                    # Example: from os_simulator.algorithms.disk.disk_pygame import main_disk_menu
-                                    #          main_disk_menu(screen)
-                                    print("Disk Management chosen (Developer Incomplete)")
+                                    main_disk_menu()
+                                    pygame.display.set_caption("Operating System Simulator")
+
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
