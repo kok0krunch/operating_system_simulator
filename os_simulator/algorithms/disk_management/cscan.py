@@ -2,19 +2,22 @@
 #import libraries
 import pygame
 import sys
+pygame.init()
 
-#Class for C-SCAN
+WIDTH = 1280
+HEIGHT = 720
+
+import pygame
+import sys
+
+# Class for C-SCAN
 class CSCANScheduling:
-
-    #Initialize head, requests, disk size, and direction 
     def __init__(self, head, requests, disk_size, direction):
         self.head = head
         self.requests = requests
         self.disk_size = disk_size
         self.direction = direction.lower()    
 
-    
-    #Compute the total head movement and seek sequence
     def compute(self):
         total_movement = 0
         sequence = [self.head]
@@ -23,63 +26,55 @@ class CSCANScheduling:
         left = []
         right = []
 
-        # Separate requests based on head position
         for request in self.requests:
             if request < current:
                 left.append(request)
             else:
                 right.append(request)
 
-        # Sort both sides
         left.sort()
         right.sort()   
 
-        #C-SCAN movement logic
         if self.direction == "right":
-
-            #Service right side
+           
             for request in right:
                 total_movement += abs(current - request)
                 current = request
                 sequence.append(current)
 
-            #Move to end of disk
             if current != self.disk_size - 1:
                 total_movement += abs(current - (self.disk_size - 1))
                 current = self.disk_size - 1
                 sequence.append(current)
 
-            #Jump to beginning
-            total_movement += self.disk_size - 1
+           
+            total_movement += (self.disk_size - 1) 
             current = 0
             sequence.append(current)
 
-            #Service left side
             for request in left:
                 total_movement += abs(current - request)
                 current = request
                 sequence.append(current)
 
         elif self.direction == "left":
-
-            #Service left side
+           
             for request in reversed(left):
                 total_movement += abs(current - request)
                 current = request
                 sequence.append(current)
 
-            #Move to start of disk
+    
             if current != 0:
-                total_movement += current
+                total_movement += abs(current - 0)
                 current = 0
                 sequence.append(current)
 
-            #Jump to end
-            total_movement += self.disk_size - 1
+      
+            total_movement += (self.disk_size - 1)
             current = self.disk_size - 1
             sequence.append(current)
 
-            #Service right side
             for request in reversed(right):
                 total_movement += abs(current - request)
                 current = request
@@ -89,9 +84,7 @@ class CSCANScheduling:
     
 # Draw arrow
 def draw_arrow(surface, color, start, end):
-
     pygame.draw.line(surface, color, start, end, 1)
-
     dx = end[0] - start[0]
     dy = end[1] - start[1]
     
@@ -99,7 +92,6 @@ def draw_arrow(surface, color, start, end):
         return
 
     angle = pygame.math.Vector2(dx, dy).angle_to((1, 0))
-
     arrow_size = 10
 
     left = pygame.math.Vector2(arrow_size, 0).rotate(-angle + 150)
@@ -108,31 +100,28 @@ def draw_arrow(surface, color, start, end):
     pygame.draw.line(surface, color, end, (end[0] + left.x, end[1] + left.y), 3)
     pygame.draw.line(surface, color, end, (end[0] + right.x, end[1] + right.y), 3)
 
-# Main Program
-def main():
-
-    pygame.init()
-
-    WIDTH = 1280
-    HEIGHT = 720
-
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("C-SCAN Disk Scheduling")
-
+def cscan_menu(screen):
     clock = pygame.time.Clock()
 
     NEON_GREEN = (57, 255, 20)
     BLACK = (0, 0, 0)
     
-    # Assets
-    background = pygame.image.load("os_simulator\\components\\background.png")
-    background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+    try:
+        background = pygame.image.load("os_simulator\\components\\background.png")
+        background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+        font_title = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 36)
+        font_large = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 46)
+        font_marker = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 18)
+    except pygame.error:
+   
+        background = pygame.Surface((WIDTH, HEIGHT))
+        background.fill((20, 20, 20))
+        font_title = pygame.font.SysFont("Courier", 36)
+        font_large = pygame.font.SysFont("Courier", 46)
+        font_small = pygame.font.SysFont("Courier", 28)
+        font_marker = pygame.font.SysFont("Courier", 18)
 
-    font_title = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 36)
-    font_large = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 46)
-    font_small = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 28)
-
-    # Screens
+    #Screens
     HEAD_INPUT = 0
     REQUEST_INPUT = 1
     DISK_SIZE_INPUT = 2
@@ -141,7 +130,7 @@ def main():
 
     current_screen = HEAD_INPUT
 
-    # Variables
+    #Variables
     head_text = ""
     request_text = ""
     disk_size_text = ""
@@ -155,8 +144,22 @@ def main():
     sequence = []
     total_head_movement = 0
 
-    # Draw head screen
-    def draw_head_screen():
+
+#Static back button bounding box
+    back_rect = pygame.Rect(30, 650, 130, 40)
+
+    #interactive back button
+    def draw_interactive_back(mouse_pos):
+        if back_rect.collidepoint(mouse_pos):
+           
+            pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
+            back_surf = font_large.render("< BACK", True, BLACK)
+        else:
+            
+            back_surf = font_large.render("< BACK", True, NEON_GREEN)
+        screen.blit(back_surf, back_rect.topleft)
+
+    def draw_head_screen(mouse_pos):
         screen.blit(background, (0, 0))
         title = font_title.render("DISK SCHEDULING: C-SCAN", True, BLACK)
         screen.blit(title, (20, 10))
@@ -167,9 +170,9 @@ def main():
         screen.blit(value, text_rect)
         back = font_large.render("< BACK", True, NEON_GREEN)
         screen.blit(back, (30, 650))
+        draw_interactive_back(mouse_pos)
 
-    # Draw request screen
-    def draw_request_screen():
+    def draw_request_screen(mouse_pos):
         screen.blit(background, (0, 0))
         title = font_title.render("DISK SCHEDULING: C-SCAN", True, BLACK)
         screen.blit(title, (20, 10))
@@ -179,20 +182,23 @@ def main():
         screen.blit(value, (260, 340))
         back = font_large.render("< BACK", True, NEON_GREEN)
         screen.blit(back, (30, 650))
+        draw_interactive_back(mouse_pos)
 
-    # Draw disk size screen
-    def draw_disk_size_screen():
+    def draw_disk_size_screen(mouse_pos):
         screen.blit(background, (0, 0))
-        title = font_title.render("DISK SCHEDULING: C-SCAN", True, BLACK)
+        title = font_title.render("DISK SCHEDULING: C-LOOK", True, BLACK)
         screen.blit(title, (20, 10))
-        label = font_large.render("Input Disk Size (0-199):", True, NEON_GREEN)
-        screen.blit(label, (450, 280))
+        label = font_large.render("Input Disk Size (e.g., 200):", True, NEON_GREEN)
+        label_rect = label.get_rect(center=(WIDTH // 2, 280))
+        screen.blit(label, label_rect)
         value = font_large.render(disk_size_text, True, NEON_GREEN)
         rect = value.get_rect(center=(WIDTH//2, 360))
         screen.blit(value, rect)
+        back = font_large.render("< BACK", True, NEON_GREEN)
+        screen.blit(back, (30, 650))
+        draw_interactive_back(mouse_pos)
 
-    # Draw direction screen
-    def draw_direction_screen():
+    def draw_direction_screen(mouse_pos):
         screen.blit(background, (0, 0))
         title = font_title.render("DISK SCHEDULING: C-SCAN", True, BLACK)
         screen.blit(title, (20, 10))
@@ -201,10 +207,10 @@ def main():
         value = font_large.render(direction_text, True, NEON_GREEN)
         rect = value.get_rect(center=(WIDTH//2, 360))
         screen.blit(value, rect)
-
-    # Draw graph
-
-    # Draw graph
+        back = font_large.render("< BACK", True, NEON_GREEN)
+        screen.blit(back, (30, 650))
+        draw_interactive_back(mouse_pos)
+        
     def draw_graph():
         if len(sequence) == 0:
             return
@@ -212,7 +218,6 @@ def main():
         graph_width = 1000
         start_x = (WIDTH - graph_width) // 2
         end_x = start_x + graph_width    
-    
         axis_y = 160  
 
         pygame.draw.line(screen, NEON_GREEN, (start_x, axis_y), (end_x, axis_y), 3)
@@ -223,22 +228,27 @@ def main():
 
         unique_tracks = sorted(list(set(sequence)))
 
-        font_marker = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 18)
+        last_right_edge = 0
+        text_y = axis_y - 45  
 
         for value in unique_tracks:
             x = start_x + (value / max_bound) * (end_x - start_x)
-
             pygame.draw.line(screen, NEON_GREEN, (x, axis_y - 25), (x, axis_y + 25), 4)
             
-            text_y = axis_y - 45 
-            
             label = font_marker.render(str(value), True, NEON_GREEN)
+            label_width = label.get_width()
+            text_x = x - (label_width // 2)
             
-            screen.blit(label, (x - (label.get_width() // 2), text_y))
+            if text_x < last_right_edge + 4:
+                text_x = last_right_edge + 4
+                
+            screen.blit(label, (text_x, text_y))
+            last_right_edge = text_x + label_width
 
-        # Draw head movement arrows
         base_y = axis_y + 50  
-        step_y = 40
+        available_height = 400
+        total_steps = len(sequence) - 1 if len(sequence) > 1 else 1
+        step_y = min(40, available_height / total_steps)
 
         for i in range(len(sequence) - 1):
             current = sequence[i]
@@ -250,11 +260,10 @@ def main():
             y1 = base_y + i * step_y
             y2 = base_y + (i + 1) * step_y
 
-           
             if abs(current - nxt) >= (max_bound * 0.9): 
                 dash_length = 10
                 total_dist = abs(x2 - x1)
-                num_dashes = int(total_dist / (dash_length * 2))
+                num_dashes = int(total_dist / (dash_length * 2)) if total_dist > 0 else 1
                 
                 step_x = (x2 - x1) / (num_dashes * 2 if num_dashes > 0 else 1)
                 curr_x = x1
@@ -268,49 +277,56 @@ def main():
                     curr_x = next_x + step_x
                     curr_y = next_y + step_y_dash
             else:
-                # Normal request step arrow
                 draw_arrow(screen, NEON_GREEN, (x1, y1), (x2, y2))
 
-    # Draw result screen
     def draw_result_screen():
         screen.blit(background, (0, 0))
-        title = font_title.render("DISK SCHEDULING: C-SCAN", True, BLACK)
+        title = font_title.render("DISK SCHEDULING: CSCAN", True, BLACK)
         screen.blit(title, (20, 10))
-
         draw_graph()
-
         total = font_large.render(f"Total Head Movement: {total_head_movement}", True, NEON_GREEN)
         screen.blit(total, (40, 650))
 
-    # Game loop
     running = True
 
     while running:
+        mouse_pos = pygame.mouse.get_pos()
+        back_rect = pygame.Rect(30, 650, 150, 40)
 
-        # Event handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
+                sys.exit()
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if back_rect.collidepoint(mouse_pos):
+                        if current_screen == HEAD_INPUT:
+                            running = False
+                            return 
+                        elif current_screen in [REQUEST_INPUT, DISK_SIZE_INPUT, DIRECTION_INPUT]:
+                            current_screen -= 1 
 
             elif event.type == pygame.KEYDOWN:
-
-                # Head input screen
                 if current_screen == HEAD_INPUT:
                     if event.key == pygame.K_RETURN:
                         if head_text.strip() != "":
-                            head = int(head_text)
-                            current_screen = REQUEST_INPUT
+                            try:
+                                head = int(head_text)
+                                current_screen = REQUEST_INPUT
+                            except ValueError:
+                                pass
                     elif event.key == pygame.K_BACKSPACE:
                         head_text = head_text[:-1]
                     elif event.unicode.isdigit():
                         head_text += event.unicode
 
-                # Request input screen
                 elif current_screen == REQUEST_INPUT:
                     if event.key == pygame.K_RETURN:
                         try:
                             requests = [int(x.strip()) for x in request_text.split(",") if x.strip() != ""]
-                            current_screen = DISK_SIZE_INPUT
+                            if len(requests) > 0:
+                                current_screen = DISK_SIZE_INPUT
                         except ValueError:
                             pass
                     elif event.key == pygame.K_BACKSPACE:
@@ -320,23 +336,23 @@ def main():
                         if event.unicode in allowed:
                             request_text += event.unicode
 
-                # Disk size input screen
                 elif current_screen == DISK_SIZE_INPUT:
                     if event.key == pygame.K_RETURN:
                         if disk_size_text.strip() != "":
-                            disk_size = int(disk_size_text)
-                            current_screen = DIRECTION_INPUT
+                            try:
+                                disk_size = int(disk_size_text)
+                                current_screen = DIRECTION_INPUT
+                            except ValueError:
+                                pass
                     elif event.key == pygame.K_BACKSPACE: 
                         disk_size_text = disk_size_text[:-1]
                     elif event.unicode.isdigit():         
                         disk_size_text += event.unicode  
 
-                # Direction input screen
                 elif current_screen == DIRECTION_INPUT:
                     if event.key == pygame.K_RETURN:
                         direction = direction_text.lower().strip()
                         if direction in ["left", "right"]:
-                            
                             cscan = CSCANScheduling(head, requests, disk_size, direction)
                             total_head_movement, sequence = cscan.compute()
                             current_screen = RESULT_SCREEN
@@ -345,7 +361,6 @@ def main():
                     elif event.unicode.isalpha():        
                         direction_text += event.unicode
 
-                # Result screen
                 elif current_screen == RESULT_SCREEN:
                     if event.key == pygame.K_ESCAPE:
                         head_text = ""
@@ -356,25 +371,21 @@ def main():
                         total_head_movement = 0
                         current_screen = HEAD_INPUT
 
-        # Screen rendering management
         if current_screen == HEAD_INPUT:
-            draw_head_screen()
+            draw_head_screen(mouse_pos)
         elif current_screen == REQUEST_INPUT:
-            draw_request_screen()
+            draw_request_screen(mouse_pos)
         elif current_screen == DISK_SIZE_INPUT:
-            draw_disk_size_screen()
+            draw_disk_size_screen(mouse_pos)
         elif current_screen == DIRECTION_INPUT:
-            draw_direction_screen()
+            draw_direction_screen(mouse_pos)
         elif current_screen == RESULT_SCREEN:
             draw_result_screen()
 
         pygame.display.flip()
         clock.tick(60)
 
-    pygame.quit()
-    sys.exit()
 
-
-# ENTRY POINT
 if __name__ == "__main__":
-    main()
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    cscan_menu(screen)

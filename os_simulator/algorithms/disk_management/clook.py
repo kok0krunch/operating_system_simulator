@@ -2,16 +2,18 @@
 import pygame
 import sys
 
-#Class for C-LOOK
-class CLOOKScheduling:
+pygame.init()
 
-    #Initialize head, requests, disk size, and direction 
+WIDTH = 1280
+HEIGHT = 720
+
+# Class for C-LOOK
+class CLOOKScheduling:
     def __init__(self, head, requests, direction):
         self.head = head
         self.requests = requests
         self.direction = direction.lower()  
 
-    #Compute total head movement and seek sequence
     def compute(self):
         total_movement = 0
         sequence = [self.head]
@@ -20,53 +22,40 @@ class CLOOKScheduling:
         left = []
         right = []
 
-    #Separate requests based on head position
         for request in self.requests:
             if request < current:
                 left.append(request)
             else:
                 right.append(request)
 
-        #Sort both sides in ascending order
         left.sort()
         right.sort()
 
-        #C-LOOK movement logic
         if self.direction == "right":
-
-            #Service right side
             for request in right:
                 total_movement += abs(current - request)
                 current = request
                 sequence.append(current)
 
-            #Jump to the smallest request
             if left:
-                total_movement += abs(current - left[0])
                 current = left[0]
                 sequence.append(current)
 
-                #Continue servicing remaining left requests
                 for request in left[1:]:
                     total_movement += abs(current - request)
                     current = request
                     sequence.append(current)
 
         elif self.direction == "left":
-
-            #Service left side
             for request in reversed(left):
                 total_movement += abs(current - request)
                 current = request
                 sequence.append(current)
 
-            #Jump to the largest request
             if right:
-                total_movement += abs(current - right[-1])
                 current = right[-1]
                 sequence.append(current)
 
-                #Continue servicing remaining right requests
                 for request in reversed(right[:-1]):
                     total_movement += abs(current - request)
                     current = request
@@ -93,29 +82,23 @@ def draw_arrow(surface, color, start, end):
     pygame.draw.line(surface, color, end, (end[0] + right.x, end[1] + right.y), 3)
 
 
-# Main Program
-def main():
-    pygame.init()
-
-    WIDTH = 1280
-    HEIGHT = 720
-
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("C-LOOK Disk Scheduling")
-
+def clook_menu(screen):
     clock = pygame.time.Clock()
 
     NEON_GREEN = (57, 255, 20)
-    BLACK = (0, 0, 0)
-
-    #Assets
-   
-    background = pygame.image.load("os_simulator\\components\\background.png")
-    background = pygame.transform.scale(background, (WIDTH, HEIGHT))
-
-    font_title = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 36)
-    font_large = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 46)
-    font_small = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 28)
+    BLACK = (0,0,0)
+    try:
+        background = pygame.image.load("os_simulator\\components\\background.png")
+        background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+        font_title = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 36)
+        font_large = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 46)
+        font_marker = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 18)
+    except pygame.error:
+        background = pygame.Surface((WIDTH, HEIGHT))
+        background.fill((20, 20, 20))
+        font_title = pygame.font.SysFont("Courier", 36)
+        font_large = pygame.font.SysFont("Courier", 46)
+        font_marker = pygame.font.SysFont("Courier", 18)
 
     #Screens State Machine
     HEAD_INPUT = 0
@@ -140,8 +123,22 @@ def main():
     sequence = []
     total_head_movement = 0
 
+#Static back button bounding box
+    back_rect = pygame.Rect(30, 650, 130, 40)
+
+    #interactive back button
+    def draw_interactive_back(mouse_pos):
+        if back_rect.collidepoint(mouse_pos):
+           
+            pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
+            back_surf = font_large.render("< BACK", True, BLACK)
+        else:
+            
+            back_surf = font_large.render("< BACK", True, NEON_GREEN)
+        screen.blit(back_surf, back_rect.topleft)
+
     #Screen Renderers
-    def draw_head_screen():
+    def draw_head_screen(mouse_pos):
         screen.blit(background, (0, 0))
         title = font_title.render("DISK SCHEDULING: C-LOOK", True, BLACK)
         screen.blit(title, (20, 10))
@@ -150,10 +147,9 @@ def main():
         value = font_large.render(head_text, True, NEON_GREEN)
         text_rect = value.get_rect(center=(WIDTH//2, 360))
         screen.blit(value, text_rect)
-        back = font_large.render("< BACK", True, NEON_GREEN)
-        screen.blit(back, (30, 650))
+        draw_interactive_back(mouse_pos)
 
-    def draw_request_screen():
+    def draw_request_screen(mouse_pos):
         screen.blit(background, (0, 0))
         title = font_title.render("DISK SCHEDULING: C-LOOK", True, BLACK)
         screen.blit(title, (20, 10))
@@ -161,20 +157,21 @@ def main():
         screen.blit(label, (250, 280))
         value = font_large.render(request_text, True, NEON_GREEN)
         screen.blit(value, (260, 340))
-        back = font_large.render("< BACK", True, NEON_GREEN)
-        screen.blit(back, (30, 650))
+        draw_interactive_back(mouse_pos)
 
-    def draw_disk_size_screen():
+    def draw_disk_size_screen(mouse_pos):
         screen.blit(background, (0, 0))
         title = font_title.render("DISK SCHEDULING: C-LOOK", True, BLACK)
         screen.blit(title, (20, 10))
-        label = font_large.render("Input Disk Size (0-199):", True, NEON_GREEN)
-        screen.blit(label, (450, 280))
+        label = font_large.render("Input Disk Size (e.g., 200):", True, NEON_GREEN)
+        label_rect = label.get_rect(center=(WIDTH // 2, 280))
+        screen.blit(label, label_rect)
         value = font_large.render(disk_size_text, True, NEON_GREEN)
         rect = value.get_rect(center=(WIDTH//2, 360))
         screen.blit(value, rect)
+        draw_interactive_back(mouse_pos)
 
-    def draw_direction_screen():
+    def draw_direction_screen(mouse_pos):
         screen.blit(background, (0, 0))
         title = font_title.render("DISK SCHEDULING: C-LOOK", True, BLACK)
         screen.blit(title, (20, 10))
@@ -183,6 +180,7 @@ def main():
         value = font_large.render(direction_text, True, NEON_GREEN)
         rect = value.get_rect(center=(WIDTH//2, 360))
         screen.blit(value, rect)
+        draw_interactive_back(mouse_pos)
 
     def draw_graph():
         if len(sequence) == 0:
@@ -200,7 +198,6 @@ def main():
             max_bound = 1
 
         unique_tracks = sorted(list(set(sequence)))
-        font_marker = pygame.font.Font("os_simulator\\components\\VT323-Regular.ttf", 18)
 
         last_right_edge = 0
         text_y = axis_y - 45  
@@ -219,7 +216,6 @@ def main():
             screen.blit(label, (text_x, text_y))
             last_right_edge = text_x + label_width
 
-        # Dynamic Arrow Height at C-LOOK Jump Rendering
         base_y = axis_y + 50  
         available_height = 400
         total_steps = len(sequence) - 1 if len(sequence) > 1 else 1
@@ -260,30 +256,37 @@ def main():
                     curr_x = next_x + step_x
                     curr_y = next_y + step_y_dash
             else:
-                # Normal request steps
                 draw_arrow(screen, NEON_GREEN, (x1, y1), (x2, y2))
 
     def draw_result_screen():
         screen.blit(background, (0, 0))
         title = font_title.render("DISK SCHEDULING: C-LOOK", True, BLACK)
         screen.blit(title, (20, 10))
-
         draw_graph()
-
         total = font_large.render(f"Total Head Movement: {total_head_movement}", True, NEON_GREEN)
         screen.blit(total, (40, 650))
 
-    #Game loop
     running = True
 
     while running:
-        #Event Handling
+        mouse_pos = pygame.mouse.get_pos()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
+                sys.exit()
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if back_rect.collidepoint(mouse_pos):
+                        if current_screen == HEAD_INPUT:
+                            running = False
+                            return 
+                        elif current_screen in [REQUEST_INPUT, DISK_SIZE_INPUT, DIRECTION_INPUT]:
+                            current_screen -= 1 
 
             elif event.type == pygame.KEYDOWN:
-                #Head Input
+                # Head Input
                 if current_screen == HEAD_INPUT:
                     if event.key == pygame.K_RETURN:
                         if head_text.strip() != "":
@@ -294,14 +297,15 @@ def main():
                     elif event.unicode.isdigit():
                         head_text += event.unicode
 
-                #Request input
+                # Request Input
                 elif current_screen == REQUEST_INPUT:
                     if event.key == pygame.K_RETURN:
-                        try:
-                            requests = [int(x.strip()) for x in request_text.split(",") if x.strip() != ""]
-                            current_screen = DISK_SIZE_INPUT
-                        except ValueError:
-                            pass
+                        if request_text.strip() != "":
+                            try:
+                                requests = [int(x.strip()) for x in request_text.split(",") if x.strip() != ""]
+                                current_screen = DISK_SIZE_INPUT
+                            except ValueError:
+                                pass
                     elif event.key == pygame.K_BACKSPACE:
                         request_text = request_text[:-1]
                     else:
@@ -309,7 +313,7 @@ def main():
                         if event.unicode in allowed:
                             request_text += event.unicode
 
-                #Disk size input
+                # Disk Size Input
                 elif current_screen == DISK_SIZE_INPUT:
                     if event.key == pygame.K_RETURN:
                         if disk_size_text.strip() != "":
@@ -320,12 +324,11 @@ def main():
                     elif event.unicode.isdigit():         
                         disk_size_text += event.unicode  
 
-                #Direction Input
+                # Direction Input
                 elif current_screen == DIRECTION_INPUT:
                     if event.key == pygame.K_RETURN:
                         direction = direction_text.lower().strip()
                         if direction in ["left", "right"]:
-                           
                             clook = CLOOKScheduling(head, requests, direction)
                             total_head_movement, sequence = clook.compute()
                             current_screen = RESULT_SCREEN
@@ -334,7 +337,7 @@ def main():
                     elif event.unicode.isalpha():        
                         direction_text += event.unicode
 
-                #Result screen
+                # Result Screen Reset
                 elif current_screen == RESULT_SCREEN:
                     if event.key == pygame.K_ESCAPE:
                         head_text = ""
@@ -345,24 +348,21 @@ def main():
                         total_head_movement = 0
                         current_screen = HEAD_INPUT
 
-        #Screen State Rendering
         if current_screen == HEAD_INPUT:
-            draw_head_screen()
+            draw_head_screen(mouse_pos)
         elif current_screen == REQUEST_INPUT:
-            draw_request_screen()
+            draw_request_screen(mouse_pos)
         elif current_screen == DISK_SIZE_INPUT:
-            draw_disk_size_screen()
+            draw_disk_size_screen(mouse_pos)
         elif current_screen == DIRECTION_INPUT:
-            draw_direction_screen()
+            draw_direction_screen(mouse_pos)
         elif current_screen == RESULT_SCREEN:
             draw_result_screen()
 
         pygame.display.flip()
         clock.tick(60)
 
-    pygame.quit()
-    sys.exit()
-
-
+#entry point
 if __name__ == "__main__":
-    main()
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    clook_menu(screen)
