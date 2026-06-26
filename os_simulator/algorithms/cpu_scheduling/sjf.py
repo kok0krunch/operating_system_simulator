@@ -1,194 +1,482 @@
-# Shortest Job First (SJF) Scheduling Algorithm - Preemptive and Non-Preemptive
-class Process_SJF:
-    def __init__(self, name, arrival_time, burst_time):
-        self.name = name
+# Shortest Job First (SJF) CPU Scheduling Algorithm Simulation
+import pygame
+import sys
+import os
+
+NEON_GREEN = (57, 255, 20)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+DARK_GRAY = (40, 40, 40)
+
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
+
+class Process:
+    def __init__(self, pid, arrival_time, burst_time):
+        self.pid = pid  
         self.arrival_time = arrival_time
         self.burst_time = burst_time
+        self.remaining_time = burst_time
         self.completion_time = 0
-        self.remaining_time = burst_time # For preemptive SJF, we need to keep track
+        self.turnaround_time = 0
+        self.waiting_time = 0
 
-    def calc_ct(self, prev_completion_time):
-        if self.arrival_time > prev_completion_time:
-            self.completion_time = self.arrival_time + self.burst_time
-        else:
-            self.completion_time = prev_completion_time + self.burst_time
-
-    def calc_tat(self):
-        return self.completion_time - self.arrival_time
+def run_non_preemptive(process_list):
+    unarrived = [Process(p.pid, p.arrival_time, p.burst_time) for p in process_list]
+    ready_queue = []
+    completed = []
+    gantt_log = [] 
     
-    def execute(self):
-        # Simulate the execution of the process
-        self.remaining_time -= 1
-        if self.remaining_time <= 0:
-            return True  # Process has completed execution
-        return False  # Process is still running
-    
-    def calc_wt(self):
-        return self.calc_tat() - self.burst_time
-    
-    def sjf_sched_nonpre(processes: list):
-
-        # Initialize a list of completed processes
-        completed_processes = []
-
-        # time that has passed since the start of scheduling
-        time = 0
-
-        # Arrived processes that are ready to execute
-        ready_processes = []
-        
-        # Protocol to handle the case when there are no ready processes at the current time
-        if processes:
-            # Sort processes by arrival time and then by burst time
-            processes.sort(key=lambda x: (x.arrival_time, x.burst_time))
-            while not ready_processes:
-                # Get the ready processes that have arrived by the current time
-                for process in processes:
-                    if process.arrival_time <= time and process not in ready_processes:
-                        ready_processes.append(process)
-
-                if not ready_processes:
-                    time += 1
-                    continue
-        # else: no processes to schedule, return empty lists and average TAT of 0
-        else:
-            print("No processes to schedule.")
-            return [], [], [], 0, 0  # No processes to schedule, return empty lists and average TAT and WT of 0
-
-        current_process = ready_processes[0]  # The process with the earliest arrival time and shortest burst time
-        while processes:
+    current_time = 0
+    while unarrived or ready_queue:
+        arrived = [p for p in unarrived if p.arrival_time <= current_time]
+        for p in arrived:
+            ready_queue.append(p)
+            unarrived.remove(p)
             
-            # Get the next process to execute based on SJF
-            while current_process.remaining_time > 0:
-                # Check for newly arrived processes
-                for process in processes:
-                    if process.arrival_time <= time and process not in ready_processes:
-                        ready_processes.append(process)
-                
-                # Increment time and decrement the remaining time of the current process
-                time += 1
-
-                # If current process is completed, sort ready processes by burst time, select next process,
-                # remove current process from processes, and calculate completion time for current process
-                if current_process.execute():
-                    for process in processes:
-                        if process.arrival_time <= time and process not in ready_processes:
-                            ready_processes.append(process)
-                    ready_processes.sort(key=lambda x: x.burst_time)  # Sort ready processes by burst time
-                    current_process.calc_ct(prev_completion_time=time)  # Calculate completion time for current process
-                    completed_processes.append(current_process) # Add current process to completed processes
-                    # If current process is in ready processes, remove it from ready processes
-                    if current_process in ready_processes:
-                        ready_processes.remove(current_process)  # Remove current process from ready processes
-                    processes.remove(current_process)
-                    current_process = ready_processes[0] if ready_processes else None  # Select the next process to execute
-                    break  # Break out of the loop
-                else:
-                    # If current process is not completed, continue executing it
-                    continue
-
-        # Calculate Turnaround Time (TAT) for each process
-        tat_list = [process.calc_tat() for process in completed_processes]
-
-        # Calculate average TAT
-        avg_tat = sum(tat_list) / len(tat_list)
-
-        # Calculate Waiting Time (WT) for each process
-        wt_list = [process.calc_wt() for process in completed_processes]
-
-        # Calculate average WT
-        avg_wt = sum(wt_list) / len(wt_list)
-        
-        return completed_processes, tat_list, wt_list, avg_tat, avg_wt
-    
-    def sjf_sched_pre(processes: list):
-
-        # Initialize a list of completed processes
-        completed_processes = []
-
-        # time that has passed since the start of scheduling
-        time = 0
-        
-        # Arrived processes that are ready to execute
-        ready_processes = []
-
-        # Protocol to handle the case when there are no ready processes at the current time
-        if processes: 
-            # Sort processes by arrival time and then by burst time
-            processes.sort(key=lambda x: (x.arrival_time, x.burst_time))
-            while not ready_processes:
-                # Get the ready processes that have arrived by the current time
-                for process in processes:
-                    if process.arrival_time <= time and process not in ready_processes:
-                        ready_processes.append(process)
-
-                if not ready_processes:
-                    time += 1
-                    continue
-        else: 
-            print("No processes to schedule.")
-            return [], [], [], 0, 0  # No processes to schedule, return empty lists and average TAT and WT of 0
-
-
-        current_process = ready_processes[0]  # The process with the earliest arrival time and shortest burst time
-
-        while processes:
+        if not ready_queue:
+            next_arrival = min([p.arrival_time for p in unarrived])
+            gantt_log.append(("IDLE", current_time, next_arrival))
+            current_time = next_arrival
+            continue
             
-            # Get the next process to execute based on SJF
-            while current_process.remaining_time > 0:
-                # Check for newly arrived processes
-                for process in processes:
-                    if process.arrival_time <= time and process not in ready_processes:
-                        ready_processes.append(process)
-                        ready_processes.sort(key=lambda x: x.burst_time)  # Sort ready processes by burst time
-                    if process in ready_processes and process.remaining_time < current_process.remaining_time:
-                        current_process = process  # Preempt current process if a shorter job arrives
-                        continue
-                        # If a new process arrives with equal remaining time, we will not preempt the current process, 
-                        # as it is already executing and has the same remaining time as the new process. 
-                        # This is a common tie-breaking rule in SJF scheduling to avoid unnecessary context switches when two processes have the same remaining time. 
-                        # We will continue executing the current process until it completes or a new process arrives with a shorter remaining time.
-                
-                # Increment time and decrement the remaining time of the current process
-                time += 1
+        # Shortest Job First (SJF): Sort ready queue by burst time
+        ready_queue.sort(key=lambda x: x.burst_time)
+        curr = ready_queue.pop(0)
+        
+        start_t = current_time
+        current_time += curr.burst_time
+        curr.completion_time = current_time
+        curr.turnaround_time = curr.completion_time - curr.arrival_time
+        curr.waiting_time = curr.turnaround_time - curr.burst_time
+        
+        gantt_log.append((f"P{curr.pid}", start_t, current_time))
+        completed.append(curr)
+        
+    return completed, gantt_log
 
-                # If current process is completed, sort ready processes by burst time, select next process,
-                # remove current process from processes, and calculate completion time for current process
-                if current_process.execute():
-                    # Check for newly arrived processes before re-sorting and calculating completion time
-                    for process in processes:
-                        if process.arrival_time <= time and process not in ready_processes:
-                            ready_processes.append(process)
-                    ready_processes.sort(key=lambda x: x.burst_time)  # Sort ready processes by burst time
-                    current_process.calc_ct(prev_completion_time=time)  # Calculate completion time for current process
-                    completed_processes.append(current_process) # Add current process to completed processes
-                    # If current process is in ready processes, remove it from ready processes
-                    if current_process in ready_processes:
-                        ready_processes.remove(current_process)  # Remove current process from ready processes
-                    processes.remove(current_process)
-                    current_process = ready_processes[0] if ready_processes else None  # Select the next process to execute
-                    break  # Break out of the loop
-                else:
-                    # If current process is not completed, continue executing it
-                    # But first, check if any new process has arrived that has a shorter remaining time than the current process
-                    if ready_processes:
-                        for process in ready_processes:
-                            if process.remaining_time < current_process.remaining_time:
-                                current_process = process  # Preempt current process if a shorter job arrives
-                                continue  # Continue to next iteration to check for newly arrived processes and execute the new current process
+def run_preemptive(process_list):
+    # Shortest Remaining Time First (SRTF)
+    unarrived = [Process(p.pid, p.arrival_time, p.burst_time) for p in process_list]
+    ready_queue = []
+    completed = []
+    gantt_log = []
+    
+    current_time = 0
+    curr_running = None
+    segment_start = 0
+    
+    while unarrived or ready_queue or curr_running:
+        arrived = [p for p in unarrived if p.arrival_time <= current_time]
+        for p in arrived:
+            ready_queue.append(p)
+            unarrived.remove(p)
+            
+        if ready_queue:
+            # Sort ready queue by shortest remaining time
+            ready_queue.sort(key=lambda x: x.remaining_time)
+            if curr_running is None:
+                curr_running = ready_queue.pop(0)
+                segment_start = current_time
+            elif ready_queue[0].remaining_time < curr_running.remaining_time:
+                if current_time > segment_start:
+                    gantt_log.append((f"P{curr_running.pid}", segment_start, current_time))
+                ready_queue.append(curr_running)
+                curr_running = ready_queue.pop(0)
+                segment_start = current_time
+                
+        if curr_running is None:
+            if unarrived:
+                next_arrival = min([p.arrival_time for p in unarrived])
+                gantt_log.append(("IDLE", current_time, next_arrival))
+                current_time = next_arrival
+                continue
+            else:
+                break
+                
+        current_time += 1
+        curr_running.remaining_time -= 1
+        
+        if curr_running.remaining_time == 0:
+            gantt_log.append((f"P{curr_running.pid}", segment_start, current_time))
+            curr_running.completion_time = current_time
+            curr_running.turnaround_time = curr_running.completion_time - curr_running.arrival_time
+            curr_running.waiting_time = curr_running.turnaround_time - curr_running.burst_time
+            completed.append(curr_running)
+            curr_running = None
+            
+    clean_gantt = []
+    for entry in gantt_log:
+        if clean_gantt and clean_gantt[-1][0] == entry[0]:
+            clean_gantt[-1] = (clean_gantt[-1][0], clean_gantt[-1][1], entry[2])
+        else:
+            clean_gantt.append(entry)
+            
+    return completed, clean_gantt
+
+# -----------------------------------------------------------------------------
+# PYGAME INTERACTION INTERFACES
+# -----------------------------------------------------------------------------
+
+def sjf_menu(screen):
+    pygame.init()
+    clock = pygame.time.Clock()
+    
+    # Try Loading Background Component
+    try:
+        background = pygame.image.load("os_simulator\\components\\background.png").convert()
+        background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    except Exception:
+        background = None
+    
+    # Verify Font Asset Integrity
+    font_path = "os_simulator\\components\\VT323-Regular.ttf"
+    if not os.path.exists(font_path):
+        print(f"CRITICAL ERROR: The font file '{font_path}' was not found in the directory.")
+        pygame.quit()
+        sys.exit()
+    
+    # Initialize UI elements with custom TTF asset
+    font_title = pygame.font.Font(font_path, 36) 
+    font_setup = pygame.font.Font(font_path, 46) 
+    font_input = pygame.font.Font(font_path, 55) 
+    font_table = pygame.font.Font(font_path, 32) 
+    
+    # Navigation & Logic Variables
+    state = 0  
+    is_preemptive = False
+    process_count = 0
+    process_data = [] 
+    
+    # Structural Input Buffers
+    count_input = ""
+    specs_input = ""
+    current_entry_index = 0 
+    input_field_index = 0   
+    temp_specs = [None, None] 
+    error_message = ""
+    
+    # Simulation Output Registers
+    completed_jobs = []
+    gantt_timeline = []
+    avg_tat = 0.0
+    avg_wt = 0.0
+
+    running = True
+    while running:
+        mouse_pos = pygame.mouse.get_pos()
+        
+        # Render Background Layer
+        if background:
+            screen.blit(background, (0, 0))
+        else:
+            screen.fill(BLACK)
+        
+        # Top Left Header Panel
+        title_surface = font_title.render("CPU SCHEDULING: Shortest Job First (SJF) Algorithm", True, BLACK)
+        screen.blit(title_surface, (20, 10))
+        
+        # Pre-create the < BACK button interaction area
+        back_surf_idle = font_setup.render("< BACK", True, NEON_GREEN)
+        back_rect = back_surf_idle.get_rect(topleft=(30, 650))
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+                
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left Click
+                    if back_rect.collidepoint(mouse_pos):
+                        if state == 0:
+                            running = False
+                            return
+                        else:
+                            # Step rewind logic
+                            if state == 3:
+                                state = 2
+                            elif state == 2:
+                                state = 1
+                                count_input = str(process_count)
+                            elif state == 1:
+                                state = 0
+                                count_input = ""
+                            error_message = ""
+                            continue
+                    
+                    # Core Strategic Selections
+                    if state == 0:
+                        b1_rect = pygame.Rect(440, 300, 400, 60)
+                        b2_rect = pygame.Rect(440, 380, 400, 60)
+                        if b1_rect.collidepoint(mouse_pos):
+                            is_preemptive = False
+                            state = 1
+                        elif b2_rect.collidepoint(mouse_pos):
+                            is_preemptive = True
+                            state = 1
+                            
+                    elif state == 2 and len(process_data) == process_count:
+                        # Calculation trigger boundary box
+                        eval_rect = pygame.Rect(490, 240, 300, 50)
+                        if eval_rect.collidepoint(mouse_pos):
+                            if is_preemptive:
+                                completed_jobs, gantt_timeline = run_preemptive(process_data)
                             else:
-                                continue
+                                completed_jobs, gantt_timeline = run_non_preemptive(process_data)
+                            
+                            avg_tat = sum([p.turnaround_time for p in completed_jobs]) / len(completed_jobs)
+                            avg_wt = sum([p.waiting_time for p in completed_jobs]) / len(completed_jobs)
+                            state = 3
 
-        # Calculate Turnaround Time (TAT) for each process
-        tat_list = [process.calc_tat() for process in completed_processes]
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                    return
 
-        # Calculate average TAT
-        avg_tat = sum(tat_list) / len(tat_list)
+                if state == 1:  # Process Count Input
+                    if event.key == pygame.K_RETURN:
+                        raw = count_input.strip()
+                        if raw != "":
+                            try:
+                                count = int(raw)
+                                if count <= 0 or count > 6: 
+                                    raise ValueError
+                                process_count = count
+                                process_data = []
+                                current_entry_index = 0
+                                input_field_index = 0
+                                temp_specs = [None, None]
+                                count_input = ""
+                                state = 2
+                                error_message = ""
+                            except ValueError:
+                                error_message = "Invalid Count (1 - 6)!"
+                        else:
+                            error_message = "Input cannot be empty!"
+                    elif event.key == pygame.K_BACKSPACE:
+                        count_input = count_input[:-1]
+                    else:
+                        if event.unicode.isdigit():
+                            count_input += event.unicode
 
-        # Calculate Waiting Time (WT) for each process
-        wt_list = [process.calc_wt() for process in completed_processes]
+                elif state == 2 and current_entry_index < process_count:  # Structural Row Population
+                    if event.key == pygame.K_RETURN:
+                        raw = specs_input.strip()
+                        if raw != "":
+                            try:
+                                val = int(raw)
+                                if val < 0:
+                                    raise ValueError
+                                temp_specs[input_field_index] = val
+                                specs_input = ""
+                                error_message = ""
+                                
+                                if input_field_index < 1:
+                                    input_field_index += 1
+                                else:
+                                    process_data.append(Process(current_entry_index + 1, temp_specs[0], temp_specs[1]))
+                                    current_entry_index += 1
+                                    input_field_index = 0
+                                    temp_specs = [None, None]
+                            except ValueError:
+                                error_message = "Values must be valid positive integers!"
+                        else:
+                            error_message = "Value cannot be empty!"
+                    elif event.key == pygame.K_BACKSPACE:
+                        specs_input = specs_input[:-1]
+                    else:
+                        if event.unicode.isdigit():
+                            specs_input += event.unicode
+                            
+                elif state == 3:  # End Evaluation Dashboard Reset
+                    if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                        state = 0
+                        count_input = ""
+                        specs_input = ""
+                        process_data = []
+                        completed_jobs = []
+                        gantt_timeline = []
+        
+        # State Rendering Logic
+        if state == 0:
+            txt1 = "Choose an SJF Scheduling Mode Strategy:"
+            surf1 = font_input.render(txt1, True, NEON_GREEN)
+            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 130)))
+            
+            b1_rect = pygame.Rect(440, 300, 400, 60)
+            b2_rect = pygame.Rect(440, 380, 400, 60)
+            
+            if b1_rect.collidepoint(mouse_pos):
+                pygame.draw.rect(screen, NEON_GREEN, b1_rect, 0, 4)
 
-        # Calculate average WT
-        avg_wt = sum(wt_list) / len(wt_list)
+            if b2_rect.collidepoint(mouse_pos):
+                pygame.draw.rect(screen, NEON_GREEN, b2_rect, 0, 4)
+            
+            t_non = font_setup.render("[1] NON-PREEMPTIVE", True, BLACK if b1_rect.collidepoint(mouse_pos) else NEON_GREEN)
+            t_pre = font_setup.render("[2] PREEMPTIVE", True, BLACK if b2_rect.collidepoint(mouse_pos) else NEON_GREEN)
+            
+            screen.blit(t_non, t_non.get_rect(center=b1_rect.center))
+            screen.blit(t_pre, t_pre.get_rect(center=b2_rect.center))
+            
+        elif state == 1:
+            mode_lbl = "Strategy Selected: " + ("PREEMPTIVE" if is_preemptive else "NON-PREEMPTIVE")
+            lbl_surf = font_table.render(mode_lbl, True, RED)
+            screen.blit(lbl_surf, lbl_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 200)))
 
-        return completed_processes, tat_list, wt_list, avg_tat, avg_wt
+            txt1 = "Initialize the CPU Scheduling Workspace Parameters"
+            txt2 = "Enter the number of active processes to evaluate:"
+            txt3 = f"[ {count_input} ]"
+
+            surf1 = font_input.render(txt1, True, NEON_GREEN)
+            surf2 = font_input.render(txt2, True, NEON_GREEN)
+            surf3 = font_input.render(txt3, True, NEON_GREEN) 
+
+            screen.blit(surf1, surf1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 110)))
+            screen.blit(surf2, surf2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50)))
+            screen.blit(surf3, surf3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 95)))
+
+            if error_message:
+                err_surf = font_title.render(error_message, True, RED)
+                screen.blit(err_surf, err_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 180)))
+
+        elif state == 2:
+            fields = ["Arrival Time", "Burst Time"]
+            hdr_str = "POLICY: " + ("PREEMPTIVE" if is_preemptive else "NON-PREEMPTIVE") + f" | CAPACITY SIZE: {process_count} JOBS"
+            hdr_surf = font_table.render(hdr_str, True, RED)
+            screen.blit(hdr_surf, (50, 75))
+            
+            if current_entry_index < process_count:
+                txt1 = f"Enter {fields[input_field_index]} for Process [ P{current_entry_index + 1} ]:"
+                txt2 = f"[{specs_input}]"
+                
+                surf1 = font_input.render(txt1, True, NEON_GREEN)
+                surf2 = font_input.render(txt2, True, NEON_GREEN)
+                screen.blit(surf1, (50, 120))
+                screen.blit(surf2, (50, 175))
+            else:
+                eval_rect = pygame.Rect(490, 240, 300, 50)
+                
+                if eval_rect.collidepoint(mouse_pos):
+                    pygame.draw.rect(screen, NEON_GREEN, eval_rect, 0, 4)
+                
+                exec_txt = font_setup.render("SEE GANTT CHART", True, BLACK if eval_rect.collidepoint(mouse_pos) else NEON_GREEN)
+                screen.blit(exec_txt, exec_txt.get_rect(center=eval_rect.center))
+                
+            if error_message:
+                err_surf = font_table.render(error_message, True, RED)
+                screen.blit(err_surf, (50, 225))
+                
+            # Dynamic Structured Registry Data Grid Layout
+            start_x, start_y = 240, 320
+            col_widths = [240, 280, 280]
+            row_height = 40
+            
+            headers = ["Process ID", "Arrival Time", "Burst Time"]
+            for idx, h in enumerate(headers):
+                h_surf = font_table.render(h, True, NEON_GREEN)
+                screen.blit(h_surf, (start_x + sum(col_widths[:idx]), start_y))
+                
+            pygame.draw.line(screen, NEON_GREEN, (start_x, start_y + 30), (SCREEN_WIDTH - start_x, start_y + 30), 1)
+            
+            for r_idx in range(process_count):
+                curr_y = start_y + 40 + (r_idx * row_height)
+                pid_lbl = f"P{r_idx + 1}"
+                row_color = NEON_GREEN if r_idx == current_entry_index else (NEON_GREEN if r_idx < current_entry_index else DARK_GRAY)
+                
+                p_surf = font_table.render(pid_lbl, True, row_color)
+                screen.blit(p_surf, (start_x, curr_y))
+                
+                if r_idx < len(process_data):
+                    val_at = str(process_data[r_idx].arrival_time)
+                    val_bt = str(process_data[r_idx].burst_time)
+                elif r_idx == current_entry_index:
+                    val_at = str(temp_specs[0]) if temp_specs[0] is not None else ("?" if input_field_index == 0 else "")
+                    val_bt = str(temp_specs[1]) if temp_specs[1] is not None else ("?" if input_field_index == 1 else "")
+                else:
+                    val_at, val_bt = "-", "-"
+                    
+                screen.blit(font_table.render(val_at, True, row_color), (start_x + col_widths[0], curr_y))
+                screen.blit(font_table.render(val_bt, True, row_color), (start_x + col_widths[0] + col_widths[1], curr_y))
+
+        elif state == 3:
+            # Diagram Simulation Grid Map Layout (Gantt Chart View)
+            gantt_y = 100
+            gantt_box_height = 50
+            chart_max_width = 1100
+            chart_start_x = 90
+            
+            total_duration = gantt_timeline[-1][2] if gantt_timeline else 1
+            lbl_g = font_table.render("GANTT TIMELINE CHART SIMULATION BLOCK:", True, NEON_GREEN)
+            screen.blit(lbl_g, (chart_start_x, gantt_y))
+            
+            box_start_y = gantt_y + 35
+            
+            for pid, start_t, end_t in gantt_timeline:
+                seg_pct = (end_t - start_t) / total_duration
+                box_width = int(seg_pct * chart_max_width)
+                box_x = chart_start_x + int((start_t / total_duration) * chart_max_width)
+                
+                block_rect = pygame.Rect(box_x, box_start_y, box_width, gantt_box_height)
+                pygame.draw.rect(screen, RED if pid == "IDLE" else NEON_GREEN, block_rect, 2)
+                
+                id_surf = font_table.render(pid, True, RED if pid == "IDLE" else NEON_GREEN)
+                screen.blit(id_surf, id_surf.get_rect(center=block_rect.center))
+                
+                t_surf = font_table.render(str(start_t), True, NEON_GREEN)
+                screen.blit(t_surf, (box_x, box_start_y + gantt_box_height + 2))
+                
+            if gantt_timeline:
+                last_t_surf = font_table.render(str(gantt_timeline[-1][2]), True, NEON_GREEN)
+                screen.blit(last_t_surf, (chart_start_x + chart_max_width - 15, box_start_y + gantt_box_height + 2))
+                
+            # Analytics Metric Computations Report Card Table Layout
+            calc_start_y = 265
+            col_c_widths = [160, 160, 160, 220, 220, 200]
+            calc_x = 90
+            
+            headers_c = ["Job ID", "Arrival", "Burst", "Completion", "Turnaround", "Waiting"]
+            for idx, hc in enumerate(headers_c):
+                hc_surf = font_table.render(hc, True, NEON_GREEN)
+                screen.blit(hc_surf, (calc_x + sum(col_c_widths[:idx]), calc_start_y))
+                
+            pygame.draw.line(screen, NEON_GREEN, (calc_x, calc_start_y + 30), (SCREEN_WIDTH - calc_x, calc_start_y + 30), 1)
+            
+            completed_jobs.sort(key=lambda x: x.pid)
+            for r_idx, job in enumerate(completed_jobs):
+                row_y = calc_start_y + 40 + (r_idx * 35)
+                metrics_text = [f"P{job.pid}", str(job.arrival_time), str(job.burst_time), str(job.completion_time), str(job.turnaround_time), str(job.waiting_time)]
+                
+                for c_idx, text in enumerate(metrics_text):
+                    color = RED if job.turnaround_time > 15 else NEON_GREEN
+                    m_surf = font_table.render(text, True, color)
+                    screen.blit(m_surf, (calc_x + sum(col_c_widths[:c_idx]), row_y))
+                    
+            # Averages Summary Metrics Panel
+            base_summary_y = calc_start_y + 40 + (len(completed_jobs) * 35) + 20
+            pygame.draw.line(screen, RED, (calc_x, base_summary_y - 10), (SCREEN_WIDTH - calc_x, base_summary_y - 10), 1)
+            
+            avg_tat_str = f"Average Turnaround Time (TAT): {avg_tat:.2f} ms"
+            avg_wt_str  = f"Average Waiting Time (WT):     {avg_wt:.2f} ms"
+            
+            screen.blit(font_table.render(avg_tat_str, True, NEON_GREEN), (calc_x, base_summary_y))
+            screen.blit(font_table.render(avg_wt_str, True, NEON_GREEN), (calc_x, base_summary_y + 30))
+            
+            prompt_txt = "Press [SPACE] or [ENTER] to start a new calculation"
+            prompt_surf = font_title.render(prompt_txt, True, NEON_GREEN)
+            screen.blit(prompt_surf, prompt_surf.get_rect(center=(SCREEN_WIDTH // 2, 620)))
+
+        # Interactive < BACK Button
+        if back_rect.collidepoint(mouse_pos):
+            pygame.draw.rect(screen, NEON_GREEN, back_rect.inflate(10, 5), 0, 4)
+            back_surface = font_setup.render("< BACK", True, BLACK)
+        else:
+            back_surface = font_setup.render("< BACK", True, NEON_GREEN)
+        screen.blit(back_surface, back_rect.topleft)
+
+        pygame.display.flip()
+        clock.tick(30)
+
+if __name__ == "__main__":
+    main_screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Virtual Memory Framework UI Component")
+    sjf_menu(main_screen)
